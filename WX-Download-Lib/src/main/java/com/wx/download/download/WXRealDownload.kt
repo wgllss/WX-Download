@@ -89,7 +89,7 @@ class WXRealDownload(
                         channel.send(stateHolder.downloading.apply { progress = nPercent })
                     }
 
-                    if (endPos - startPos < 1024 * 2) WLog.e(this@WXRealDownload, "${mis}  len:$len startPos:$startPos endPos:$endPos")
+//                    if (endPos - startPos < 1024 * 2) WLog.e(this@WXRealDownload, "${mis}  len:$len startPos:$startPos endPos:$endPos")
                     if (startPos >= endPos) {
                         isOK = true
                     } // 下载完成

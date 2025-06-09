@@ -10,6 +10,7 @@ class WXDownloadFileTask(
 
     //每个下载任务都有对应的状态
     private val stateHolder by lazy { StateHolder() }
+    private var downloadCoroutineManager: WXDownloadCoroutineManager? = null
 
     private val mDownLoadBean by lazy {
         FileUtils.createDir(strDownloadDir)
@@ -17,7 +18,8 @@ class WXDownloadFileTask(
     }
 
     suspend fun download() {
-        WXDownloadCoroutineManager(mDownLoadBean, channel, stateHolder).start(coroutineScope)
+        downloadCoroutineManager = WXDownloadCoroutineManager(mDownLoadBean, channel, stateHolder)
+        downloadCoroutineManager?.start(coroutineScope)
     }
 
     fun pauseDownload() {

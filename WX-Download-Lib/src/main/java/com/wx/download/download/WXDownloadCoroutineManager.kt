@@ -6,6 +6,7 @@ import com.wx.download.utils.WLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -46,6 +47,7 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
 
     private val mis by lazy { "{下载:(${downLoadFileBean.fileSiteURL})"; }
 
+
     suspend fun start(coroutineScope: CoroutineScope) {
         WLog.i(this, this@WXDownloadCoroutineManager.mis + "开始 start ${Thread.currentThread().name}")
         val start = System.currentTimeMillis()
@@ -56,7 +58,7 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
                 if (!isLoadSuccess) {
                     val fileAsynNum: Int = downLoadFileBean.fileAsyncNumb
                     WLog.i(this, this@WXDownloadCoroutineManager.mis + "开始")
-                    val isRange: Boolean = downLoadFileBean.isRange
+                    val isRange = downLoadFileBean.isRange
                     if (isRange) {
                         val sets = mutableSetOf<Deferred<Any>>()
                         for (i in 0 until fileAsynNum) {
@@ -67,7 +69,7 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
                         }
                         sets.forEach { it.await() }
                     } else {
-                        val downloadDeferred = async {
+                        val downloadDeferred = async(Dispatchers.IO) {
                             WXRealDownload(downLoadFileBean, channel, stateHolder = stateHolder).runDownload()
                         }
                         downloadDeferred.await()
@@ -77,15 +79,13 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
                     val file = downLoadFileBean.saveFile
                     // 删除临时文件
                     val downloadFileSize = file.length()
-                    WLog.e(this@WXDownloadCoroutineManager, "dffdffffffffffffffffd  downloadFileSize:$downloadFileSize  fileLength:$fileLength")
                     var msg = "失败"
                     if (downloadFileSize == fileLength) {
                         msg = "成功"
                         downLoadFileBean.isDownSuccess = true // 下载成功
                         channel.send(stateHolder.succeed)
                         tempFile.forEach {
-                            it.deleteOnExit()
-                            delay(50)
+                            it.delete()
                         }// 临时文件删除
                         // 下载成功,处理解析文件
                     } else {
@@ -100,8 +100,7 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
                     val end = System.currentTimeMillis()
                     WLog.i(this, "成功下载'${downLoadFileBean.fileSaveName}'花时：${(end - start).toDouble() / 1000}秒")
                     tempFile.forEach {
-                        it.deleteOnExit()
-                        delay(50)
+                        it.delete()
                     }// 临时文件删除
                 }
             }
@@ -158,7 +157,10 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
                         swapStream.close()
                     }
                     downLoadFileBean.fileLength = fileLength
-//                    downLoadFileBean.fileLengthFile.createNewFile()
+                    if (fileLength < 1L * 1024 * 1024) {
+                        //如果文件大小小于1M 默认就只分一块下载
+                        downLoadFileBean.fileAsyncNumb = 1
+                    }
                     return true // 失败成功
                 }
                 WLog.i(this, "$mis-请求返回responseCode=$responseCode,连接失败")
@@ -195,7 +197,7 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
                     for (i in 0..<fileAsyncNumb) {
                         tempFileFos[i] = RandomAccessFile(downLoadFileBean.tempFile[i], "rw")
                         startPos[i] = tempFileFos[i].readLong() // 开始的位置
-                        WLog.e(this@WXDownloadCoroutineManager, "startPos[i]:${startPos[i]} ")
+                        WLog.e(this, "startPos[i]:${startPos[i]} ")
                         if (i == fileAsyncNumb - 1) {
                             endPos[i] = fileLength
                         } else {
@@ -204,7 +206,8 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
                     }
                 } else {
                     isLoadSuccess = true
-                    tempFile.forEach { it.deleteOnExit() }
+                    WLog.e(this, "isLoadSuccess $isLoadSuccess")
+//                    downLoadFileBean.tempFile[0].delete()
                 }
             } else {
                 // 目标文件不存在，则创建新文件
@@ -216,15 +219,13 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
 
                     startPos[i] = fileThreadSize * i
                     if (i == fileAsyncNumb - 1) {
-                        endPos[i] = this.fileLength
+                        endPos[i] = fileLength
                     } else {
                         endPos[i] = fileThreadSize * (i + 1) - 1
                     }
                     tempFileFos[i].writeLong(startPos[i])
                 }
             }
-
-
         } catch (e: Exception) {
             channel.send(stateHolder.failed)
             WLog.e(this, "${mis}异常：${e.message}")

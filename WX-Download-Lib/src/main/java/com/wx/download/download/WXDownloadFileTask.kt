@@ -16,7 +16,7 @@ class WXDownloadFileTask(
         WXDownloadFileBean(which, fileSiteURL, strDownloadDir, fileSaveName, fileAsyncNumb)
     }
 
-    fun download() {
+    suspend fun download() {
         WXDownloadCoroutineManager(mDownLoadBean, channel, stateHolder).start(coroutineScope)
     }
 

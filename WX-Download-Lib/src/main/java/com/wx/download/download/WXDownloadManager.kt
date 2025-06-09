@@ -52,7 +52,7 @@ class WXDownloadManager private constructor() {
             }
             if (isFirst) {
                 isFirst = false
-                coroutineScope.launch {
+                launch {
                     channel.consumeEach {
                         if (it is WXState.Succeed || it is WXState.Failed) {
                             val whichKey = "${it.which}"

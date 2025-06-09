@@ -17,6 +17,7 @@ import com.wx.progress.dynamic.ProgressModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import java.io.File
 
 class WXDownLoadViewModel : ViewModel() {
 
@@ -47,6 +48,8 @@ class WXDownLoadViewModel : ViewModel() {
         val fileAsyncNumb = 2
 //        downloadFile = viewModelScope.download(0, url, strDownloadDir, fileSaveName, 3)
 //        downloadFile.download()
+//        val file = File(strDownloadDir, fileSaveName)
+
         downloadManager.download(viewModelScope, which, url, strDownloadDir, fileSaveName, fileAsyncNumb)
         downloadManager.downloadStatusFlow().onEach {
             when (it) {

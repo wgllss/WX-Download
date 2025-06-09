@@ -13,6 +13,8 @@ class WXDownloadFileBean(
 
     var fileLength: Long = -1
     var isRange = true //是否支持断点续传
+
+    @Volatile
     var isDownSuccess = false
 
     /**
@@ -22,12 +24,17 @@ class WXDownloadFileBean(
     var isAbortDownload = false
 
     val fileTempName: String
-        get() = ".${fileSaveName}tmp${which}_${fileLength}"
+        get() = ".${fileSaveName}tmp${which}"
 
     val saveFile: File
         get() = File(StringBuilder(fileSavePath).append(File.separator).append(fileSaveName).toString())
 
-    val tempFile: File
-        get() = File(StringBuilder(fileSavePath).append(File.separator).append(fileTempName).toString())
-
+    val tempFile: Array<File>
+        get() {
+            val files = Array(fileAsyncNumb) { File("") }
+            for (i in 0 until fileAsyncNumb) {
+                files[i] = File(StringBuilder(fileSavePath).append(File.separator).append(fileTempName).append("_").append(i).toString())
+            }
+            return files
+        }
 }

@@ -52,9 +52,7 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
         val start = System.currentTimeMillis()
         if (startConnect()) {
             initTemp()
-            WLog.e(this, this@WXDownloadCoroutineManager.mis + "连接成功 ${Thread.currentThread().name}")
             coroutineScope.launch {
-                WLog.e(this, this@WXDownloadCoroutineManager.mis + "分片下载开始 ${Thread.currentThread().name}")
                 // 2:分多个异步下载文件
                 if (!isLoadSuccess) {
                     val fileAsynNum: Int = downLoadFileBean.fileAsyncNumb

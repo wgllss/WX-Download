@@ -11,7 +11,7 @@ import java.io.RandomAccessFile
 import java.net.HttpURLConnection
 import java.net.URL
 
-class WXRealDownload(
+class WXRangeDownload(
     val downLoadFileBean: WXDownloadFileBean, val channel: Channel<WXState>, var startPos: Long = 0, val endPos: Long = 0, val asynID: Int = 0, val stateHolder: StateHolder
 ) {
     private val timeout = 30000 // 超时时间

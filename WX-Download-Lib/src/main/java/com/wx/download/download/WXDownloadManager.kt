@@ -3,7 +3,6 @@ package com.wx.download.download
 import com.wx.download.utils.WLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -18,9 +17,7 @@ class WXDownloadManager private constructor() {
     /**
      * 同时下载的任务数量
      */
-    private var maxTaskNumber = 5
-
-    private var isFirst = true
+    var maxTaskNumber = 3
 
     /**
      * 任务map正在下载的
@@ -39,20 +36,7 @@ class WXDownloadManager private constructor() {
         coroutineScope.launch(Dispatchers.IO) {
             WLog.i(this@WXDownloadManager, "download ${Thread.currentThread().name}")
 
-            val downloadTask = WXDownloadFileTask(this, which, fileSiteURL, strDownloadDir, fileSaveName, channel, fileAsyncNumb)
-            if (runningMapTask.size < maxTaskNumber) {
-                val key = StringBuilder().append(which).append(fileSiteURL).append(strDownloadDir).append(fileSaveName).append(fileAsyncNumb).toString()
-                if (!runningMapTask.containsKey(key)) {
-                    runningMapTask[key] = downloadTask
-                    downloadTask.download()
-                }
-                val whichKey = "$which"
-                runningMapKey.takeUnless { it.containsKey(whichKey) }?.put(whichKey, key)
-            } else {
-                deque.takeUnless { it.contains(downloadTask) }?.add(downloadTask)
-            }
-            if (isFirst) {
-                isFirst = false
+            if (runningMapKey.size == 0) {
                 launch {
                     channel.consumeEach {
                         if (it is WXState.Succeed || it is WXState.Failed) {
@@ -61,18 +45,39 @@ class WXDownloadManager private constructor() {
                                 runningMapTask.remove(it[whichKey])
                                 it.remove(whichKey)
                             }
+                            WLog.e(this@WXDownloadManager, "等待：${deque.size}")
 
-                            deque.takeIf { it.size > 0 }?.first()?.run {
-                                val key = StringBuilder().append(which).append(fileSiteURL).append(strDownloadDir).append(fileSaveName).append(fileAsyncNumb).toString()
+                            deque.takeIf { it.size > 0 }?.poll()?.run {
+                                val key = StringBuilder().append(this.which).append(this.fileSiteURL).append(this.strDownloadDir).append(this.fileSaveName).append(this.fileAsyncNumb).toString()
                                 if (!runningMapTask.containsKey(key)) {
                                     runningMapTask[key] = this@run
-                                    download()
+                                    coroutineScope.launch(Dispatchers.IO) {
+                                        download(this)
+                                    }
                                 }
                             }
                         }
                         _downloadStateFlow.emit(it)
                     }
                 }
+            }
+
+            val downloadTask = WXDownloadFileTask(which, fileSiteURL, strDownloadDir, fileSaveName, channel, fileAsyncNumb)
+            val key = StringBuilder().append(which).append(fileSiteURL).append(strDownloadDir).append(fileSaveName).append(fileAsyncNumb).toString()
+            val whichKey = "$which"
+            if (runningMapTask.size < maxTaskNumber) {
+                if (!runningMapTask.containsKey(key)) {
+                    runningMapTask[key] = downloadTask
+                    downloadTask.download(this)
+                }
+                runningMapKey.takeUnless { it.containsKey(whichKey) }?.put(whichKey, key)
+            } else {
+                runningMapKey.takeUnless { it.containsKey(whichKey) }?.let {
+                    it.put(whichKey, key)
+                    deque.takeUnless { it.contains(downloadTask) }?.add(downloadTask)
+                }
+                downloadTask.waiting()
+                WLog.e(this@WXDownloadManager, "正在等待：${deque.size}")
             }
         }
     }

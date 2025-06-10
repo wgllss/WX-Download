@@ -24,81 +24,80 @@ class WXDownLoadViewModel : ViewModel() {
     private val downloadManager by lazy { WXDownloadManager.instance }
 
 
-    private val _datas = MutableLiveData<ProgressModel>()
-    val datas: LiveData<ProgressModel> = _datas
+    private val _datas = MutableLiveData<MutableList<ProgressModel>>()
+    val datas: LiveData<MutableList<ProgressModel>> = _datas
 
-    private val _progress = MutableLiveData<Float>()
-    val progress: LiveData<Float> = _progress
+    private val downloadDatas = mutableListOf(
+        "https://imtt.dd.qq.com/16891/apk/96881CC7639E84F35E86421691CBBA5D.apk?fsname=com.sina.weibo_11.1.3_4842.apk",
+        "https://imtt.dd.qq.com/sjy.00022/sjy.00004/16891/apk/8C6FDC631C3D853BF29321F86EE739FF.apk?fsname=com.taobao.idlefish_7.21.31.apk",
+        "https://imtt.dd.qq.com/sjy.00022/sjy.00004/16891/apk/822A20774AEE3225DD7BCAA20DB56C7D.apk?fsname=com.taobao.taobao_10.49.10.apk",
+        "https://imtt.dd.qq.com/sjy.00022/sjy.00004/16891/apk/7B73608E1C88ED42581EC313748001E5.apk?fsname=com.tmall.wireless_15.52.0.apk",
+        "https://imtt.dd.qq.com/sjy.00022/sjy.00004/16891/apk/4DB00D67C6672380F3CCE96A58FBE0DD.apk?fsname=com.alibaba.wireless_11.61.0.0.apk",
+    )
 
     private val environmentGetExternalStorageDirectory: String = Environment.getExternalStorageDirectory().path
     private var sdCardExist = Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED
     private fun getSDPath(): String = if (sdCardExist) environmentGetExternalStorageDirectory else ""
+    private val strDownloadDir = "${getSDPath()}/WX_Download/"
 
-//    private lateinit var downloadFile: WXDownloadFileTask
 
-//    //模拟下载暂停
-//    private var isPause = false
-
-    fun download22() {
-        val which = 0
-        val url = "https://imtt.dd.qq.com/16891/apk/96881CC7639E84F35E86421691CBBA5D.apk?fsname=com.sina.weibo_11.1.3_4842.apk"
-//            val url =  "http://192.168.3.108:8080/assets/apk/google_18489_201606032222.apk"
-        val strDownloadDir = getSDPath()
-        val fileSaveName = "3333.apk"
+    fun download(which: Int) {
+        val url = downloadDatas[which]
+        val fileSaveName = url.substring(url.lastIndexOf("?") + 1, url.length)
         val fileAsyncNumb = 2
-//        downloadFile = viewModelScope.download(0, url, strDownloadDir, fileSaveName, 3)
-//        downloadFile.download()
-//        val file = File(strDownloadDir, fileSaveName)
-
         downloadManager.download(viewModelScope, which, url, strDownloadDir, fileSaveName, fileAsyncNumb)
+    }
+
+    fun add() {
+        viewModelScope.launch {
+            val list = mutableListOf(ProgressModel("下载按钮1", strokeColor = Color.Red, mBackgroundSecondColor = Color.Red).apply {
+                maxProgress = 100f
+                statusFinishText = "点击安装1"
+            }, ProgressModel("下载按钮2", strokeColor = Color.Red, mBackgroundSecondColor = Color.Red).apply {
+                maxProgress = 100f
+                statusFinishText = "点击安装2"
+            }, ProgressModel("下载按钮3", strokeColor = Color.Red, mBackgroundSecondColor = Color.Red).apply {
+                maxProgress = 100f
+                statusFinishText = "点击安装3"
+            }, ProgressModel("下载按钮4", strokeColor = Color.Red, mBackgroundSecondColor = Color.Red).apply {
+                maxProgress = 100f
+                statusFinishText = "点击安装4"
+            }, ProgressModel("下载按钮5", strokeColor = Color.Red, mBackgroundSecondColor = Color.Red).apply {
+                maxProgress = 100f
+                statusFinishText = "点击安装5"
+            })
+            _datas.value = list
+        }
         downloadManager.downloadStatusFlow().onEach {
             when (it) {
-                is WXState.None -> {}
+                is WXState.None -> {
+
+                }
+
                 is WXState.Downloading -> {
-                    _progress.value = it.progress.toFloat()
+                    _datas.value!![it.which].progress.value = it.progress.toFloat()
                 }
 
                 is WXState.Pause -> {}
                 is WXState.Failed -> {}
                 is WXState.Succeed -> {
-                    _progress.value = 100f
+                    _datas.value!![it.which].progress.value = 100f
                 }
 
                 is WXState.Waiting -> {}
             }
         }.launchIn(viewModelScope)
-
-
-//        viewModelScope.launch {
-//            val url = "https://imtt.dd.qq.com/16891/apk/96881CC7639E84F35E86421691CBBA5D.apk?fsname=com.sina.weibo_11.1.3_4842.apk"
-////            val url =  "http://192.168.3.108:8080/assets/apk/google_18489_201606032222.apk"
-//            val strDownloadDir = getSDPath()
-//            val fileSaveName = "3333.apk"
-//        }
     }
 
-    @Volatile
-    private var progressDD = 0f
-
-    fun add() {
-        viewModelScope.launch {
-            val model = ProgressModel("下载按钮", strokeColor = Color.Red, mBackgroundSecondColor = Color.Red).apply {
-                maxProgress = 100f
-                statusFinishText = "点击安装"
-            }
-            _datas.value = model
-        }
-    }
-
-    fun onClick(mode: Int) = when (mode) {
+    fun onClick(mode: Int, which: Int) = when (mode) {
         WX_PROGRESS_BUTTON_DOWNLOADING -> {
             //正在下载
-            download22()
+            download(which)
         }
 
         WX_PROGRESS_BUTTON_DOWNLOAD_PAUSE -> {
             //暂停
-            pause()
+            pause(which)
         }
 
         WX_PROGRESS_BUTTON_DOWNLOAD_COMPLETE -> {
@@ -110,31 +109,15 @@ class WXDownLoadViewModel : ViewModel() {
         }
     }
 
-
-//    private fun download() {
-//        viewModelScope.launch {
-//            isPause = false
-//            while (progressDD < 100 && !isPause) {
-//                delay(200)
-//                if (progressDD < 100f) progressDD += 2
-//                _progress.value = progressDD
-//            }
-//        }
-//    }
-
-    private fun pause() {
-//        isPause = true
-//        if (this::downloadFile.isInitialized) {
-//            downloadFile.pauseDownload()
-//        }
-        downloadManager.downloadPause(0)
-        val model = datas.value!!
-        model.statusText = "继续下载"
-        _datas.value = model
+    private fun pause(which: Int) {
+        downloadManager.downloadPause(which)
+        val list = datas.value!!
+        val model = list[which]
+        model.statusText = "继续下载${which}"
+        _datas.value = list
     }
 
     private fun finish() {
 
     }
-
 }

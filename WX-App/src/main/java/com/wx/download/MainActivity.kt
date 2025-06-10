@@ -1,5 +1,6 @@
 package com.wx.download
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -19,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -28,7 +32,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bumptech.glide.Glide
 import com.wx.download.ui.theme.WXDownLoadTheme
+import com.wx.download.utils.WLog
 import com.wx.progress.ProgressButton
+import kotlin.math.absoluteValue
 
 class MainActivity : ComponentActivity() {
 
@@ -50,27 +56,27 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@SuppressLint("UnrememberedMutableState")
 @Composable
 fun ProgressButtonSample(viewModel: WXDownLoadViewModel, innerPadding: PaddingValues = PaddingValues(0.dp)) {
-    val datas by viewModel.datas.observeAsState()
-
-    val progress by viewModel.progress.observeAsState(0f)
+    val datas by viewModel.datas.observeAsState(emptyList())
     val textMeasurer = rememberTextMeasurer()
-
-    Column(
+    LazyColumn(
         modifier = Modifier
             .padding(innerPadding)
             .fillMaxWidth()
             .fillMaxHeight()
     ) {
-        datas?.let {
+        itemsIndexed(datas, key = { i, item ->
+            item.progress
+        }) { i, item ->
             ProgressButton(
                 Modifier
                     .padding(50.dp, 50.dp, 50.dp, 0.dp)
                     .fillMaxWidth()
-                    .height(50.dp), textMeasurer, TextStyle(color = Color.Black, fontSize = 16.sp), it, progress
+                    .height(50.dp), textMeasurer, TextStyle(color = Color.Black, fontSize = 16.sp), item
             ) {
-                viewModel.onClick(it)
+                viewModel.onClick(it, i)
             }
         }
     }

@@ -78,7 +78,8 @@ dependencies {
 //    implementation(libs.androidx.ui.graphics.android)
 
     implementation(project(":WX-Download-Lib"))
-    implementation("io.github.wgllss:Wgllss-ProgressButton:1.0.03")
+    implementation("io.github.wgllss:Wgllss-ProgressButton:1.0.08")
+//    implementation(project(":WX-ProgressButton-Lib"))
 
 
     implementation(libs.converter.gson)

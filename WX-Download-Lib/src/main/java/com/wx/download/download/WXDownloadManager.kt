@@ -32,35 +32,42 @@ class WXDownloadManager private constructor() {
         val instance by lazy { WXDownloadManager() }
     }
 
-    fun download(coroutineScope: CoroutineScope, which: Int, fileSiteURL: String, strDownloadDir: String, fileSaveName: String, fileAsyncNumb: Int = 1) {
+    fun downloadInit(coroutineScope: CoroutineScope, maxTaskNumber: Int) {
+        this.maxTaskNumber = maxTaskNumber
         coroutineScope.launch(Dispatchers.IO) {
-            WLog.i(this@WXDownloadManager, "download ${Thread.currentThread().name}")
+            WLog.i(this@WXDownloadManager, "downloadInit ${Thread.currentThread().name}")
+            channel.consumeEach {
+                when (it) {
+                    is WXState.Succeed, is WXState.Failed, is WXState.Pause -> {
+                        val whichKey = "${it.which}"
+                        runningMapKey.takeIf { it.containsKey(whichKey) }?.let {
+                            runningMapTask.remove(it[whichKey])
+                            it.remove(whichKey)
+                        }
+                        WLog.e(this@WXDownloadManager, "等待：${deque.size}")
 
-            if (runningMapKey.size == 0) {
-                launch {
-                    channel.consumeEach {
-                        if (it is WXState.Succeed || it is WXState.Failed) {
-                            val whichKey = "${it.which}"
-                            runningMapKey.takeIf { it.containsKey(whichKey) }?.let {
-                                runningMapTask.remove(it[whichKey])
-                                it.remove(whichKey)
-                            }
-                            WLog.e(this@WXDownloadManager, "等待：${deque.size}")
-
-                            deque.takeIf { it.size > 0 }?.poll()?.run {
-                                val key = StringBuilder().append(this.which).append(this.fileSiteURL).append(this.strDownloadDir).append(this.fileSaveName).append(this.fileAsyncNumb).toString()
-                                if (!runningMapTask.containsKey(key)) {
-                                    runningMapTask[key] = this@run
-                                    coroutineScope.launch(Dispatchers.IO) {
-                                        download(this)
-                                    }
+                        deque.takeIf { it.size > 0 }?.poll()?.run {
+                            val key = StringBuilder().append(this.which).append(this.fileSiteURL).append(this.strDownloadDir).append(this.fileSaveName).append(this.fileAsyncNumb).toString()
+                            if (!runningMapTask.containsKey(key)) {
+                                runningMapTask[key] = this@run
+                                coroutineScope.launch(Dispatchers.IO) {
+                                    download(this)
                                 }
                             }
                         }
-                        _downloadStateFlow.emit(it)
+                    }
+                    else -> {
+
                     }
                 }
+                _downloadStateFlow.emit(it)
             }
+        }
+    }
+
+    fun download(coroutineScope: CoroutineScope, which: Int, fileSiteURL: String, strDownloadDir: String, fileSaveName: String, fileAsyncNumb: Int = 1) {
+        coroutineScope.launch(Dispatchers.IO) {
+            WLog.i(this@WXDownloadManager, "download ${Thread.currentThread().name}")
 
             val downloadTask = WXDownloadFileTask(which, fileSiteURL, strDownloadDir, fileSaveName, channel, fileAsyncNumb)
             val key = StringBuilder().append(which).append(fileSiteURL).append(strDownloadDir).append(fileSaveName).append(fileAsyncNumb).toString()

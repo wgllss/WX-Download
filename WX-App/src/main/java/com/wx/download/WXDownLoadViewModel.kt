@@ -68,6 +68,8 @@ class WXDownLoadViewModel : ViewModel() {
             })
             _datas.value = list
         }
+
+        downloadManager.downloadInit(viewModelScope, 3)
         downloadManager.downloadStatusFlow().onEach {
             when (it) {
                 is WXState.None -> {

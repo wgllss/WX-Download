@@ -8,6 +8,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
@@ -53,6 +54,7 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
         if (startConnect()) {
             initTemp()
             coroutineScope.launch {
+                WLog.i(this, this@WXDownloadCoroutineManager.mis + "分多个异步下载文件 ${Thread.currentThread().name}")
                 // 2:分多个异步下载文件
                 if (!isLoadSuccess) {
                     val fileAsynNum: Int = downLoadFileBean.fileAsyncNumb
@@ -88,7 +90,8 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
                         }// 临时文件删除
                         // 下载成功,处理解析文件
                     } else {
-                        if (downLoadFileBean.isAbortDownload) channel.send(stateHolder.pause)
+                        if (downLoadFileBean.isAbortDownload)
+                            channel.send(stateHolder.pause)
                         else channel.send(stateHolder.failed)
                     }
                     val end = System.currentTimeMillis()

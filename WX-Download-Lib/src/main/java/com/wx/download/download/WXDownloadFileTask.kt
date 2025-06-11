@@ -34,4 +34,15 @@ class WXDownloadFileTask(
             channel.send(stateHolder.waiting)
         }
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as WXDownloadFileTask
+        if (which != other.which) return false
+        return fileSiteURL == other.fileSiteURL && strDownloadDir == other.strDownloadDir && fileSaveName == other.fileSaveName && fileAsyncNumb == other.fileAsyncNumb
+    }
+
+    override fun hashCode() = which + fileSiteURL.hashCode() + strDownloadDir.hashCode() + fileSaveName.hashCode() + fileAsyncNumb
+
 }

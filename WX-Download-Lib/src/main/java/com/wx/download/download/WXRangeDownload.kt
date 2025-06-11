@@ -94,7 +94,11 @@ class WXRangeDownload(
                         isOK = true
                     } // 下载完成
                 }
-                WLog.e(this, "$mis 下载完成")
+                if (isOK) {
+                    WLog.e(this, "$mis 下载完成")
+                } else
+                    WLog.e(this, "$mis 下载暂停")
+
             }
         } catch (e: java.lang.Exception) {
             WLog.e(this, "$mis 异常: ${e.message}") // logger.debug

@@ -88,6 +88,7 @@ dependencies {
 
     implementation(libs.xxpermissions)
     implementation(libs.core.ktx)
+    implementation(libs.xxpermissions)
 //    implementation(libs.wgllss.wxchart)
 
 //    implementation("androidx.media3:media3-exoplayer:1.2.1")

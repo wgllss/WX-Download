@@ -1,7 +1,15 @@
 package com.wx.download
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -30,7 +38,11 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
+import com.hjq.permissions.Permission
+import com.hjq.permissions.XXPermissions
 import com.wx.download.ui.theme.WXDownLoadTheme
 import com.wx.download.utils.WLog
 import com.wx.progress.ProgressButton
@@ -39,6 +51,9 @@ import kotlin.math.absoluteValue
 class MainActivity : ComponentActivity() {
 
     val viewModel by viewModels<WXDownLoadViewModel>()
+
+    private val REQUEST_CODE_STORAGE = 100
+    private val REQUEST_CODE_MANAGE_STORAGE = 101
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,6 +68,17 @@ class MainActivity : ComponentActivity() {
             }
         }
         viewModel.add()
+        checkPermission()
+    }
+
+    private fun checkPermission(): Boolean {
+        XXPermissions.with(this).permission(Permission.MANAGE_EXTERNAL_STORAGE).request { permissions, allGranted ->
+            if (!allGranted) {
+                Toast.makeText(this@MainActivity, "部分权限成功", Toast.LENGTH_LONG).show()
+                return@request
+            }
+        }
+        return false
     }
 }
 
@@ -72,7 +98,7 @@ fun ProgressButtonSample(viewModel: WXDownLoadViewModel, innerPadding: PaddingVa
         }) { i, item ->
             ProgressButton(
                 Modifier
-                    .padding(50.dp, 50.dp, 50.dp, 0.dp)
+                    .padding(10.dp, 10.dp, 10.dp, 0.dp)
                     .fillMaxWidth()
                     .height(50.dp), textMeasurer, TextStyle(color = Color.Black, fontSize = 16.sp), item
             ) {

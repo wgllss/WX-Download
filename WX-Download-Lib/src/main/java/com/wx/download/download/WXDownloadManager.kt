@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 class WXDownloadManager private constructor() {
 
+    /** 状态接受流，热流 **/
     private val _downloadStateFlow = MutableSharedFlow<WXState>()
 
     /**
@@ -23,9 +24,14 @@ class WXDownloadManager private constructor() {
      * 任务map正在下载的
      */
     private val runningMapTask by lazy { ConcurrentHashMap<String, WXDownloadFileTask>() }
-    private val runningMapKey by lazy { ConcurrentHashMap<String, String>() }
-    private val deque by lazy { ConcurrentLinkedQueue<WXDownloadFileTask>() }
 
+    /** 下载的所有存储 task的key **/
+    private val runningMapKey by lazy { ConcurrentHashMap<Int, String>() }
+
+    /** 等待队列**/
+    private val waitingDeque by lazy { ConcurrentLinkedQueue<WXDownloadFileTask>() }
+
+    /** 协程之间通信 **/
     private val channel by lazy { Channel<WXState>() }
 
     companion object {
@@ -34,33 +40,34 @@ class WXDownloadManager private constructor() {
 
     fun downloadInit(coroutineScope: CoroutineScope, maxTaskNumber: Int) {
         this.maxTaskNumber = maxTaskNumber
-        coroutineScope.launch(Dispatchers.IO) {
+        coroutineScope.launch {
             WLog.i(this@WXDownloadManager, "downloadInit ${Thread.currentThread().name}")
-            channel.consumeEach {
-                when (it) {
+            channel.consumeEach { s ->
+                when (s) {
                     is WXState.Succeed, is WXState.Failed, is WXState.Pause -> {
-                        val whichKey = "${it.which}"
-                        runningMapKey.takeIf { it.containsKey(whichKey) }?.let {
-                            runningMapTask.remove(it[whichKey])
-                            it.remove(whichKey)
+                        runningMapKey.takeIf { it.containsKey(s.which) }?.let {
+                            runningMapTask.remove(it[s.which])
+                            it.remove(s.which)
                         }
-                        WLog.e(this@WXDownloadManager, "等待：${deque.size}")
 
-                        deque.takeIf { it.size > 0 }?.poll()?.run {
+                        WLog.e(this@WXDownloadManager, "等待：${waitingDeque.size}")
+
+                        waitingDeque.takeIf { it.size > 0 }?.poll()?.run {
                             val key = StringBuilder().append(this.which).append(this.fileSiteURL).append(this.strDownloadDir).append(this.fileSaveName).append(this.fileAsyncNumb).toString()
                             if (!runningMapTask.containsKey(key)) {
                                 runningMapTask[key] = this@run
                                 coroutineScope.launch(Dispatchers.IO) {
-                                    download(this)
+                                    download()
                                 }
                             }
                         }
                     }
+
                     else -> {
 
                     }
                 }
-                _downloadStateFlow.emit(it)
+                _downloadStateFlow.emit(s)
             }
         }
     }
@@ -68,23 +75,21 @@ class WXDownloadManager private constructor() {
     fun download(coroutineScope: CoroutineScope, which: Int, fileSiteURL: String, strDownloadDir: String, fileSaveName: String, fileAsyncNumb: Int = 1) {
         coroutineScope.launch(Dispatchers.IO) {
             WLog.i(this@WXDownloadManager, "download ${Thread.currentThread().name}")
-
             val downloadTask = WXDownloadFileTask(which, fileSiteURL, strDownloadDir, fileSaveName, channel, fileAsyncNumb)
             val key = StringBuilder().append(which).append(fileSiteURL).append(strDownloadDir).append(fileSaveName).append(fileAsyncNumb).toString()
-            val whichKey = "$which"
             if (runningMapTask.size < maxTaskNumber) {
+                runningMapKey.takeUnless { it.containsKey(which) }?.put(which, key)
                 if (!runningMapTask.containsKey(key)) {
                     runningMapTask[key] = downloadTask
-                    downloadTask.download(this)
+                    downloadTask.download()
                 }
-                runningMapKey.takeUnless { it.containsKey(whichKey) }?.put(whichKey, key)
             } else {
-                runningMapKey.takeUnless { it.containsKey(whichKey) }?.let {
-                    it.put(whichKey, key)
-                    deque.takeUnless { it.contains(downloadTask) }?.add(downloadTask)
+                runningMapKey.takeUnless { it.containsKey(which) }?.let {
+                    it[which] = key
+                    waitingDeque.takeUnless { it.contains(downloadTask) }?.add(downloadTask)
                 }
                 downloadTask.waiting()
-                WLog.e(this@WXDownloadManager, "正在等待：${deque.size}")
+                WLog.e(this@WXDownloadManager, "正在等待：${waitingDeque.size}")
             }
         }
     }
@@ -92,8 +97,7 @@ class WXDownloadManager private constructor() {
     fun downloadStatusFlow() = _downloadStateFlow
 
     fun downloadPause(which: Int) {
-        val whichKey = "$which"
-        runningMapKey.takeIf { it.containsKey(whichKey) }?.get(whichKey)?.let { key ->
+        runningMapKey.takeIf { it.containsKey(which) }?.get(which)?.let { key ->
             runningMapTask.takeIf { it.containsKey(key) }?.get(key)?.pauseDownload()
         }
     }

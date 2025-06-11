@@ -48,64 +48,62 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
     private val mis by lazy { "{下载:(${downLoadFileBean.fileSiteURL})"; }
 
 
-    suspend fun start(coroutineScope: CoroutineScope) {
+    suspend fun start() = coroutineScope {
         WLog.i(this, this@WXDownloadCoroutineManager.mis + "开始 start ${Thread.currentThread().name}")
         val start = System.currentTimeMillis()
         if (startConnect()) {
             initTemp()
-            coroutineScope.launch {
-                WLog.i(this, this@WXDownloadCoroutineManager.mis + "分多个异步下载文件 ${Thread.currentThread().name}")
-                // 2:分多个异步下载文件
-                if (!isLoadSuccess) {
-                    val fileAsynNum: Int = downLoadFileBean.fileAsyncNumb
-                    WLog.i(this, this@WXDownloadCoroutineManager.mis + "开始")
-                    val isRange = downLoadFileBean.isRange
-                    if (isRange) {
-                        val sets = mutableSetOf<Deferred<Any>>()
-                        for (i in 0 until fileAsynNum) {
-                            val downloadDeferred = async(Dispatchers.IO) {
-                                WXRangeDownload(downLoadFileBean, channel, startPos[i], endPos[i], i, stateHolder).runDownload()
-                            }
-                            sets.add(downloadDeferred)
-                        }
-                        sets.forEach { it.await() }
-                    } else {
+            WLog.i(this, this@WXDownloadCoroutineManager.mis + "分多个异步下载文件 ${Thread.currentThread().name}")
+            // 2:分多个异步下载文件
+            if (!isLoadSuccess) {
+                val fileAsynNum: Int = downLoadFileBean.fileAsyncNumb
+                WLog.i(this, this@WXDownloadCoroutineManager.mis + "开始")
+                val isRange = downLoadFileBean.isRange
+                if (isRange) {
+                    val sets = mutableSetOf<Deferred<Any>>()
+                    for (i in 0 until fileAsynNum) {
                         val downloadDeferred = async(Dispatchers.IO) {
-                            WXRangeDownload(downLoadFileBean, channel, stateHolder = stateHolder).runDownload()
+                            WXRangeDownload(downLoadFileBean, channel, startPos[i], endPos[i], i, stateHolder).runDownload()
                         }
-                        downloadDeferred.await()
+                        sets.add(downloadDeferred)
                     }
-
-
-                    val file = downLoadFileBean.saveFile
-                    // 删除临时文件
-                    val downloadFileSize = file.length()
-                    var msg = "失败"
-                    if (downloadFileSize == fileLength) {
-                        msg = "成功"
-                        downLoadFileBean.isDownSuccess = true // 下载成功
-                        channel.send(stateHolder.succeed)
-                        tempFile.forEach {
-                            it.delete()
-                        }// 临时文件删除
-                        // 下载成功,处理解析文件
-                    } else {
-                        if (downLoadFileBean.isAbortDownload)
-                            channel.send(stateHolder.pause)
-                        else channel.send(stateHolder.failed)
-                    }
-                    val end = System.currentTimeMillis()
-                    WLog.i(this, msg + "下载'${downLoadFileBean.fileSaveName}'花时：${(end - start).toDouble() / 1000}秒")
+                    sets.forEach { it.await() }
                 } else {
-                    WLog.i(this, "已经存在")
+                    val downloadDeferred = async(Dispatchers.IO) {
+                        WXRangeDownload(downLoadFileBean, channel, stateHolder = stateHolder).runDownload()
+                    }
+                    downloadDeferred.await()
+                }
+
+
+                val file = downLoadFileBean.saveFile
+                // 删除临时文件
+                val downloadFileSize = file.length()
+                var msg = "失败"
+                if (downloadFileSize == fileLength) {
+                    msg = "成功"
                     downLoadFileBean.isDownSuccess = true // 下载成功
                     channel.send(stateHolder.succeed)
-                    val end = System.currentTimeMillis()
-                    WLog.i(this, "成功下载'${downLoadFileBean.fileSaveName}'花时：${(end - start).toDouble() / 1000}秒")
                     tempFile.forEach {
                         it.delete()
                     }// 临时文件删除
+                    // 下载成功,处理解析文件
+                } else {
+                    if (downLoadFileBean.isAbortDownload)
+                        channel.send(stateHolder.pause)
+                    else channel.send(stateHolder.failed)
                 }
+                val end = System.currentTimeMillis()
+                WLog.i(this, msg + "下载'${downLoadFileBean.fileSaveName}'花时：${(end - start).toDouble() / 1000}秒")
+            } else {
+                WLog.i(this, "已经存在")
+                downLoadFileBean.isDownSuccess = true // 下载成功
+                channel.send(stateHolder.succeed)
+                val end = System.currentTimeMillis()
+                WLog.i(this, "成功下载'${downLoadFileBean.fileSaveName}'花时：${(end - start).toDouble() / 1000}秒")
+                tempFile.forEach {
+                    it.delete()
+                }// 临时文件删除
             }
         }
     }

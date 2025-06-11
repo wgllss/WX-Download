@@ -12,7 +12,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 class WXRangeDownload(
-    val downLoadFileBean: WXDownloadFileBean, val channel: Channel<WXState>, var startPos: Long = 0, val endPos: Long = 0, val asynID: Int = 0, val stateHolder: StateHolder
+    val downLoadFileBean: WXDownloadFileBean, val channel: Channel<WXState>, var startPos: Long = 0, val endPos: Long = 0, val asynID: Int = 0, val stateHolder: WXStateHolder
 ) {
     private val timeout = 30000 // 超时时间
     private val reTryNum = 5 // 超时重试次数

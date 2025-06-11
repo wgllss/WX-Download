@@ -12,6 +12,8 @@ class WXDownloadFileBean(
 ) {
 
     var fileLength: Long = -1
+
+    @Volatile
     var isRange = true //是否支持断点续传
 
     @Volatile

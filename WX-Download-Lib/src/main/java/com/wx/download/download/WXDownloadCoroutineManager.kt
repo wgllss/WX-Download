@@ -3,14 +3,12 @@ package com.wx.download.download
 import android.os.Build
 import com.wx.download.utils.HttpUtils
 import com.wx.download.utils.WLog
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
@@ -18,7 +16,7 @@ import java.io.RandomAccessFile
 import java.net.HttpURLConnection
 import java.net.URL
 
-class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBean, val channel: Channel<WXState>, val stateHolder: StateHolder) {
+class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBean, val channel: Channel<WXState>, val stateHolder: WXStateHolder) {
 
     /**
      * 开始位置
@@ -89,8 +87,7 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
                     }// 临时文件删除
                     // 下载成功,处理解析文件
                 } else {
-                    if (downLoadFileBean.isAbortDownload)
-                        channel.send(stateHolder.pause)
+                    if (downLoadFileBean.isAbortDownload) channel.send(stateHolder.pause)
                     else channel.send(stateHolder.failed)
                 }
                 val end = System.currentTimeMillis()
@@ -132,11 +129,15 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
             val url = URL(downLoadFileBean.fileSiteURL)
             httpConnection = HttpUtils.getHttpURLConnection(url, 10000)?.apply {
                 HttpUtils.setConHeader(this)
+                requestMethod = "HEAD"
                 connect()
             }
             httpConnection?.let {
                 val responseCode = httpConnection.responseCode
                 if (responseCode <= 400) {
+                    val acceptRanges = it.getHeaderField("Accept-Ranges")
+                    downLoadFileBean.isRange = ("bytes" == acceptRanges)
+                    WLog.i(this, "$mis-支持断点续传:${downLoadFileBean.isRange}")
                     fileLength = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                         httpConnection.contentLengthLong // 设置下载长度
                     } else {

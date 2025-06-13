@@ -129,7 +129,6 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
             val url = URL(downLoadFileBean.fileSiteURL)
             httpConnection = HttpUtils.getHttpURLConnection(url, 10000)?.apply {
                 HttpUtils.setConHeader(this)
-                requestMethod = "HEAD"
                 connect()
             }
             httpConnection?.let {
@@ -146,17 +145,15 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
                     WLog.i(this, "$mis-请求返回fileLength:$fileLength")
                     if (fileLength == -1L) {
                         val inputstream = httpConnection.inputStream
-                        val swapStream = ByteArrayOutputStream()
                         val buff = ByteArray(512)
+                        var count = 0L
                         var rc = 0
                         while ((inputstream.read(buff, 0, 512).also { rc = it }) > 0) {
-                            swapStream.write(buff, 0, rc)
+                            count += rc
                         }
-                        val b = swapStream.toByteArray()
-                        fileLength = b.size.toLong()
+                        fileLength = count
                         WLog.i(this, "$mis-请求返回fileLength2:$fileLength")
                         inputstream.close()
-                        swapStream.close()
                     }
                     downLoadFileBean.fileLength = fileLength
                     if (fileLength < 1L * 1024 * 1024) {

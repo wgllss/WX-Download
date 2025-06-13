@@ -87,6 +87,8 @@ object HttpUtils {
             setRequestProperty("Upgrade-Insecure-Requests", "1")
             setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Mobile Safari/537.36")
             setRequestProperty("Accept-Language", "en-us,en;q=0.7,zh-cn;q=0.3")
+            setRequestProperty("Sec-Fetch-Dest", "document")
+            setRequestProperty("Accept-Encoding", "identity")
             setRequestProperty("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7")
             setRequestProperty("Keep-Alive", "300")
             setRequestProperty("Connection", "keep-alive")

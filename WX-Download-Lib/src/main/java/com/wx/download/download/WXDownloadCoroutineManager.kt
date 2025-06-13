@@ -229,7 +229,7 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
             WLog.e(this, "${mis}异常：${e.message}")
         } finally {
             try {
-                tempFileFos?.forEach { it.close() } //close()
+                tempFileFos.forEach { it.close() }
             } catch (e: IOException) {
                 e.printStackTrace()
             }

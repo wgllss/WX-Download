@@ -96,7 +96,7 @@ class WXRangeDownload(
                 else WLog.e(this, "$mis 下载暂停")
 
             }
-        } catch (e: java.lang.Exception) {
+        } catch (e: Exception) {
             WLog.e(this, "$mis 异常: ${e.message}") // logger.debug
         } finally {
             try {
@@ -107,7 +107,7 @@ class WXRangeDownload(
                 file.close()
                 // 文件指针文件
                 tempFile.close()
-            } catch (e: IOException) {
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
         }

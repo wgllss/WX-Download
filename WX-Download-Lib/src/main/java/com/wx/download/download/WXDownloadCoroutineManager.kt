@@ -115,7 +115,11 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
                 delay((waitTime * curNum).toLong())
             }
             connect = connect()
-            curNum++
+            if (connect) {
+                return true
+            } else {
+                curNum++
+            }
         }
         return connect
     }
@@ -266,7 +270,7 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
         } finally {
             try {
                 tempFileFos.forEach { it.close() }
-            } catch (e: IOException) {
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
         }

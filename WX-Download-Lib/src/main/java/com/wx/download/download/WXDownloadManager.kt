@@ -1,6 +1,5 @@
 package com.wx.download.download
 
-import com.wx.download.utils.FileUtils
 import com.wx.download.utils.WLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

@@ -31,12 +31,16 @@ class WXDownloadFileBean(
     val saveFile: File
         get() = File(StringBuilder(fileSavePath).append(File.separator).append(fileSaveName).toString())
 
-    val tempFile: Array<File>
-        get() {
-            val files = Array(fileAsyncNumb) { File("") }
-            for (i in 0 until fileAsyncNumb) {
-                files[i] = File(StringBuilder(fileSavePath).append(File.separator).append(fileTempName).append("_").append(i).toString())
-            }
-            return files
+    val lengthFile: File
+        get() = File(StringBuilder(fileSavePath).append(File.separator).append(fileSaveName).append("_fileLength").toString())
+
+    lateinit var tempFile: Array<File>
+
+    fun setTempFile() {
+        val files = Array(fileAsyncNumb) { File("") }
+        for (i in 0 until fileAsyncNumb) {
+            files[i] = File(StringBuilder(fileSavePath).append(File.separator).append(fileTempName).append("_").append(i).toString())
         }
+        tempFile = files
+    }
 }

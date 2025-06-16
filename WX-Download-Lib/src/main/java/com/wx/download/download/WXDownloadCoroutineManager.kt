@@ -36,7 +36,7 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
     /**
      * 文件下载的临时信息
      */
-    private val tempFile by lazy { downLoadFileBean.tempFile }
+    private lateinit var tempFile: Array<File>//by lazy { downLoadFileBean.tempFile }
 
     /**
      * 下载是否成功的标记
@@ -45,11 +45,14 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
 
     private val mis by lazy { "{下载:(${downLoadFileBean.fileSiteURL})"; }
 
+    //存取文件长度
+    private lateinit var lengthFile: RandomAccessFile
+
 
     suspend fun start() = coroutineScope {
         WLog.i(this, this@WXDownloadCoroutineManager.mis + "开始 start ${Thread.currentThread().name}")
         val start = System.currentTimeMillis()
-        if (startConnect()) {
+        if (isConnect()) {
             initTemp()
             WLog.i(this, this@WXDownloadCoroutineManager.mis + "分多个异步下载文件 ${Thread.currentThread().name}")
             // 2:分多个异步下载文件
@@ -105,10 +108,10 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
         }
     }
 
-    private suspend fun startConnect(): Boolean {
-        delay(300)
+    private suspend fun isConnect(): Boolean {
+//        delay(300)
         var curNum = 0 // 重试计数器
-        val tryNum = 1 // 重试的次数
+        val tryNum = 3 // 重试的次数
         val waitTime = 500 // 等待500ms
         var connect = false
         // 将有3次的重试机会.大概花时3s
@@ -124,6 +127,18 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
     }
 
     private suspend fun connect(): Boolean {
+        if (downLoadFileBean.lengthFile.exists()) {
+            lengthFile = RandomAccessFile(downLoadFileBean.lengthFile, "rw")
+            downLoadFileBean.fileLength = lengthFile.readLong()
+            fileLength = downLoadFileBean.fileLength
+            downLoadFileBean.isRange = lengthFile.readBoolean()
+            downLoadFileBean.fileAsyncNumb = lengthFile.readInt()
+            downLoadFileBean.setTempFile()
+            tempFile = downLoadFileBean.tempFile
+            lengthFile.close()
+            return true
+        }
+
         var httpConnection: HttpURLConnection? = null
         try {
             val url = URL(downLoadFileBean.fileSiteURL)
@@ -155,11 +170,21 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
                         WLog.i(this, "$mis-请求返回fileLength2:$fileLength")
                         inputstream.close()
                     }
+
                     downLoadFileBean.fileLength = fileLength
+
+                    lengthFile = RandomAccessFile(downLoadFileBean.lengthFile, "rw")
+                    lengthFile.writeLong(fileLength) //存取文件长度
+                    lengthFile.writeBoolean(downLoadFileBean.isRange)//存取文件服务器是否支持断点续传
+
                     if (fileLength < 1L * 1024 * 1024) {
                         //如果文件大小小于1M 默认就只分一块下载
                         downLoadFileBean.fileAsyncNumb = 1
                     }
+                    lengthFile.writeInt(downLoadFileBean.fileAsyncNumb)//存取强制文件分片数量为1
+                    downLoadFileBean.setTempFile()
+                    tempFile = downLoadFileBean.tempFile
+                    lengthFile.close()
                     return true // 失败成功
                 }
                 WLog.i(this, "$mis-请求返回responseCode=$responseCode,连接失败")
@@ -174,8 +199,8 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
         return false // 失败返回
     }
 
-    private suspend fun initTemp() {
-        val tempFileFos = Array(downLoadFileBean.fileAsyncNumb) { RandomAccessFile(downLoadFileBean.tempFile[0], "rw") }
+    private suspend fun initTemp() = coroutineScope {
+        val tempFileFos = Array(downLoadFileBean.fileAsyncNumb) { RandomAccessFile(tempFile[0], "rw") }
         try {
             val file: File = downLoadFileBean.saveFile
             val fileAsyncNumb: Int = downLoadFileBean.fileAsyncNumb
@@ -190,11 +215,13 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
                 }
                 WLog.e(this@WXDownloadCoroutineManager, "localFileSize:$localFileSize fileLength:$fileLength")
                 if (localFileSize != fileLength && isExists) { // 小于的开始断点下载
+                    val nPercent = (localFileSize * 100 / downLoadFileBean.fileLength).toInt()
+                    channel.send(stateHolder.downloading.apply { progress = nPercent })
                     WLog.i(this, "重新断点续传..")
                     /** 线程数下载的大小  */
                     val fileThreadSize = fileLength / fileAsyncNumb // 每个线程需要下载的大小
                     for (i in 0..<fileAsyncNumb) {
-                        tempFileFos[i] = RandomAccessFile(downLoadFileBean.tempFile[i], "rw")
+                        tempFileFos[i] = RandomAccessFile(tempFile[i], "rw")
                         startPos[i] = tempFileFos[i].readLong() // 开始的位置
                         WLog.e(this, "startPos[i]:${startPos[i]} ")
                         if (i == fileAsyncNumb - 1) {
@@ -213,7 +240,7 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
                 val fileThreadSize = fileLength / fileAsyncNumb // 每个线程需要下载的大小
                 for (i in 0..<fileAsyncNumb) {
                     tempFile[i].createNewFile()
-                    tempFileFos[i] = RandomAccessFile(downLoadFileBean.tempFile[i], "rw")
+                    tempFileFos[i] = RandomAccessFile(tempFile[i], "rw")
 
                     startPos[i] = fileThreadSize * i
                     if (i == fileAsyncNumb - 1) {

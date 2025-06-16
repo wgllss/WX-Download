@@ -45,7 +45,7 @@ class WXDownLoadViewModel : ViewModel() {
     fun download(which: Int) {
         val url = downloadDatas[which]
         var fileSaveName = url.substring(url.lastIndexOf("?") + 1, url.length)
-        if(which==0) fileSaveName ="blue.apk"
+        if (which == 0) fileSaveName = "blue.apk"
         val fileAsyncNumb = 2
         downloadManager.download(viewModelScope, which, url, strDownloadDir, fileSaveName, fileAsyncNumb)
     }
@@ -74,7 +74,11 @@ class WXDownLoadViewModel : ViewModel() {
             _datas.value = list
         }
 
+
+        /** 初始化 最大并行同时下载文件个数 **/
         downloadManager.downloadInit(viewModelScope, 3)
+
+        /** 监听文件下载状态 及下载进度 **/
         downloadManager.downloadStatusFlow().onEach {
             when (it) {
                 is WXState.None -> {
@@ -94,6 +98,15 @@ class WXDownLoadViewModel : ViewModel() {
                 is WXState.Waiting -> {}
             }
         }.launchIn(viewModelScope)
+
+        /** 初始化上次没有下载完的文件下载进度 **/
+        downloadDatas.forEachIndexed { index, url ->
+            var fileSaveName = url.substring(url.lastIndexOf("?") + 1, url.length)
+            if (index == 0) fileSaveName = "blue.apk"
+            // 注意：  要与点击下载传入保存的文件名fileSaveName ，保存的文件路径strDownloadDir ，which 全部要一致
+            downloadManager.initTempFilePercent(viewModelScope, index, strDownloadDir, fileSaveName)
+        }
+
     }
 
     fun onClick(mode: Int, which: Int) = when (mode) {

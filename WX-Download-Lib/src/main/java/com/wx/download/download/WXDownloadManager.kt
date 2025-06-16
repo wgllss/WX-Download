@@ -1,5 +1,6 @@
 package com.wx.download.download
 
+import com.wx.download.utils.FileUtils
 import com.wx.download.utils.WLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -7,6 +8,8 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.RandomAccessFile
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -18,7 +21,7 @@ class WXDownloadManager private constructor() {
     /**
      * 同时下载的任务数量
      */
-    var maxTaskNumber = 3
+    private var maxTaskNumber = 3
 
     /**
      * 任务map正在下载的
@@ -38,6 +41,7 @@ class WXDownloadManager private constructor() {
         val instance by lazy { WXDownloadManager() }
     }
 
+    //初始化下载
     fun downloadInit(coroutineScope: CoroutineScope, maxTaskNumber: Int) {
         this.maxTaskNumber = maxTaskNumber
         coroutineScope.launch {
@@ -90,6 +94,23 @@ class WXDownloadManager private constructor() {
                 }
                 downloadTask.waiting()
                 WLog.e(this@WXDownloadManager, "正在等待：${waitingDeque.size}")
+            }
+        }
+    }
+
+    //初始化已经下载的进度
+    fun initTempFilePercent(coroutineScope: CoroutineScope, whichFile: Int, strDownloadDir: String, fileSaveName: String) {
+        coroutineScope.launch(Dispatchers.IO) {
+            val saveFile = File(StringBuilder(strDownloadDir).append(File.separator).append(fileSaveName).toString())
+            val fileLengthFile = File(StringBuilder(strDownloadDir).append(File.separator).append(fileSaveName).append("_fileLength").toString())
+            if (saveFile.exists() && fileLengthFile.exists()) {
+                val localFileSize = saveFile.length() // 本地的文件大小
+                val lengthFile = RandomAccessFile(fileLengthFile, "rw")
+                val fileLength = lengthFile.readLong()
+                val nPercent = (localFileSize * 100 / fileLength).toInt()
+                val stateHolder = WXStateHolder().apply { which = whichFile }
+                channel.send(stateHolder.downloading.apply { progress = nPercent })
+                lengthFile.close()
             }
         }
     }

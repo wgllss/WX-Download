@@ -1,11 +1,12 @@
 package com.wx.download.download
 
 import com.wx.download.utils.FileUtils
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 
 class WXDownloadFileTask(
-    val which: Int, val fileSiteURL: String, val strDownloadDir: String, val fileSaveName: String, val channel: Channel<WXState>, var fileAsyncNumb: Int = 1
+    val which: Int, val fileSiteURL: String, val strDownloadDir: String, val fileSaveName: String, val channel: Channel<WXState>, var fileAsyncNumb: Int, deleteOnExit: Boolean
 ) {
 
     /** 每个下载任务都有对应的状态 **/
@@ -13,7 +14,7 @@ class WXDownloadFileTask(
 
     private val mDownLoadBean by lazy {
         FileUtils.createDir(strDownloadDir)
-        WXDownloadFileBean(which, fileSiteURL, strDownloadDir, fileSaveName, fileAsyncNumb)
+        WXDownloadFileBean(which, fileSiteURL, strDownloadDir, fileSaveName, fileAsyncNumb, deleteOnExit)
     }
 
     suspend fun download() {

@@ -8,7 +8,8 @@ class WXDownloadFileBean(
     val fileSiteURL: String,  //文件的网络地址
     val fileSavePath: String, //文件保存的路径
     val fileSaveName: String, //保存的文件名
-    var fileAsyncNumb: Int = 1 //文件异步任务数，可能不是线程，一个线程下多个协程进行异步
+    var fileAsyncNumb: Int = 1, //文件异步任务数，可能不是线程，一个线程下多个协程进行异步
+    var deleteOnExit: Boolean = false  // 是否当存在,每次下载最新的
 ) {
 
     var fileLength: Long = -1
@@ -34,13 +35,12 @@ class WXDownloadFileBean(
     val lengthFile: File
         get() = File(StringBuilder(fileSavePath).append(File.separator).append(fileSaveName).append("_fileLength").toString())
 
-    lateinit var tempFile: Array<File>
-
-    fun setTempFile() {
-        val files = Array(fileAsyncNumb) { File("") }
-        for (i in 0 until fileAsyncNumb) {
-            files[i] = File(StringBuilder(fileSavePath).append(File.separator).append(fileTempName).append("_").append(i).toString())
+    val tempFile: Array<File>
+        get() {
+            val files = Array(fileAsyncNumb) { File("") }
+            for (i in 0 until fileAsyncNumb) {
+                files[i] = File(StringBuilder(fileSavePath).append(File.separator).append(fileTempName).append("_").append(i).toString())
+            }
+            return files
         }
-        tempFile = files
-    }
 }

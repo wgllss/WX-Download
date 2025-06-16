@@ -78,7 +78,7 @@ class WXRangeDownload(
                     startPos += len.toLong()
 
                     tempFile.writeLong(startPos) // 写入断点数据文件
-                    if ((count - myFileLength) > 1024 * 50) {
+                    if ((count - myFileLength) > 1024) {
                         myFileLength = count
                         var tempSize = 0L
                         val file = downLoadFileBean.saveFile
@@ -88,16 +88,12 @@ class WXRangeDownload(
                         val nPercent = (tempSize * 100 / downLoadFileBean.fileLength).toInt()
                         channel.send(stateHolder.downloading.apply { progress = nPercent })
                     }
-
-//                    if (endPos - startPos < 1024 * 2) WLog.e(this@WXRealDownload, "${mis}  len:$len startPos:$startPos endPos:$endPos")
                     if (startPos >= endPos) {
                         isOK = true
                     } // 下载完成
                 }
-                if (isOK) {
-                    WLog.e(this, "$mis 下载完成")
-                } else
-                    WLog.e(this, "$mis 下载暂停")
+                if (isOK) WLog.e(this, "$mis 下载完成")
+                else WLog.e(this, "$mis 下载暂停")
 
             }
         } catch (e: java.lang.Exception) {

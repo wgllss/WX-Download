@@ -76,10 +76,10 @@ class WXDownloadManager private constructor() {
         }
     }
 
-    fun download(coroutineScope: CoroutineScope, which: Int, fileSiteURL: String, strDownloadDir: String, fileSaveName: String, fileAsyncNumb: Int = 1) {
+    fun download(coroutineScope: CoroutineScope, which: Int, fileSiteURL: String, strDownloadDir: String, fileSaveName: String, fileAsyncNumb: Int = 1, deleteOnExit: Boolean = false) {
         coroutineScope.launch(Dispatchers.IO) {
             WLog.i(this@WXDownloadManager, "download ${Thread.currentThread().name}")
-            val downloadTask = WXDownloadFileTask(which, fileSiteURL, strDownloadDir, fileSaveName, channel, fileAsyncNumb)
+            val downloadTask = WXDownloadFileTask(which, fileSiteURL, strDownloadDir, fileSaveName, channel, fileAsyncNumb, deleteOnExit)
             val key = StringBuilder().append(which).append(fileSiteURL).append(strDownloadDir).append(fileSaveName).append(fileAsyncNumb).toString()
             if (runningMapTask.size < maxTaskNumber) {
                 runningMapKey.takeUnless { it.containsKey(which) }?.put(which, key)

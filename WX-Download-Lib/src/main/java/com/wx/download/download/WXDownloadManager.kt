@@ -1,6 +1,5 @@
 package com.wx.download.download
 
-import com.wx.download.download.net.WXHttpURLConnectionImpl
 import com.wx.download.download.net.WXOkHttpImpl
 import com.wx.download.utils.WLog
 import kotlinx.coroutines.CoroutineScope

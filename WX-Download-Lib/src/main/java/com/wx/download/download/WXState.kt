@@ -8,7 +8,7 @@ sealed class WXState {
     class Waiting : WXState()
 
     class Downloading : WXState() {
-        var progress: Int = 0
+        var progress: Float = 0f
             internal set
     }
 

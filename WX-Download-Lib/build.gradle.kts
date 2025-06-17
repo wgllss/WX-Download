@@ -29,6 +29,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.lifecycle.service)
+    implementation(libs.okhttp3.okhttp)  // 主库
+//    implementation("com.squareup.okio:okio:3.6.0")
 //    implementation(libs.kotlinx.coroutines.core)
 //    implementation(libs.androidx.lifecycle.viewmodel.ktx)
 }

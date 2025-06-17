@@ -1,5 +1,7 @@
 package com.wx.download.download
 
+import com.wx.download.download.net.WXHttpURLConnectionImpl
+import com.wx.download.download.net.WXOkHttpImpl
 import com.wx.download.utils.WLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,6 +15,8 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class WXDownloadManager private constructor() {
+
+    private lateinit var downloadNet: WXDownloadNet
 
     /** 状态接受流，热流 **/
     private val _downloadStateFlow = MutableSharedFlow<WXState>()
@@ -41,8 +45,10 @@ class WXDownloadManager private constructor() {
     }
 
     //初始化下载
-    fun downloadInit(coroutineScope: CoroutineScope, maxTaskNumber: Int) {
+    fun downloadInit(coroutineScope: CoroutineScope, maxTaskNumber: Int = WXDownloadDefault.DEFAULT_MAX_TASK_NUMBER, downloadNet: WXDownloadNet = WXOkHttpImpl(WXDownloadDefault.DEFAULT_MIN_DOWNLOAD_RANGE_SIZE)) {
         this.maxTaskNumber = maxTaskNumber
+        this.downloadNet = downloadNet
+
         coroutineScope.launch {
             WLog.i(this@WXDownloadManager, "downloadInit ${Thread.currentThread().name}")
             channel.consumeEach { s ->
@@ -60,12 +66,11 @@ class WXDownloadManager private constructor() {
                             if (!runningMapTask.containsKey(key)) {
                                 runningMapTask[key] = this@run
                                 coroutineScope.launch(Dispatchers.IO) {
-                                    download()
+                                    download(downloadNet)
                                 }
                             }
                         }
                     }
-
                     else -> {
 
                     }
@@ -84,7 +89,7 @@ class WXDownloadManager private constructor() {
                 runningMapKey.takeUnless { it.containsKey(which) }?.put(which, key)
                 if (!runningMapTask.containsKey(key)) {
                     runningMapTask[key] = downloadTask
-                    downloadTask.download()
+                    downloadTask.download(downloadNet)
                 }
             } else {
                 runningMapKey.takeUnless { it.containsKey(which) }?.let {
@@ -106,7 +111,7 @@ class WXDownloadManager private constructor() {
                 val localFileSize = saveFile.length() // 本地的文件大小
                 val lengthFile = RandomAccessFile(fileLengthFile, "rw")
                 val fileLength = lengthFile.readLong()
-                val nPercent = (localFileSize * 100 / fileLength).toInt()
+                val nPercent = (localFileSize * 100f / fileLength)
                 val stateHolder = WXStateHolder().apply { which = whichFile }
                 channel.send(stateHolder.downloading.apply { progress = nPercent })
                 lengthFile.close()

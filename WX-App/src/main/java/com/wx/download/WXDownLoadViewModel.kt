@@ -86,7 +86,7 @@ class WXDownLoadViewModel : ViewModel() {
                 }
 
                 is WXState.Downloading -> {
-                    _datas.value!![it.which].progress.value = it.progress.toFloat()
+                    _datas.value!![it.which].progress.value = it.progress
                 }
 
                 is WXState.Pause -> {}

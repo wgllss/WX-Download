@@ -31,6 +31,7 @@ class WXOkHttpImpl(private val minDownloadRangeSize: Long) : WXBaseNetDownload()
         response.use {
             try {
                 if (it.isSuccessful) {
+                    downLoadFileBean.isRange = (it.code == 206 || it.header("Content-Range")?.isNotEmpty() == true || it.header("Accept-Ranges") == "bytes")
                     var fileLength = it.body?.contentLength() ?: -1L
                     if (fileLength == -1L) {
                         val inputStream = it.body?.byteStream()!!

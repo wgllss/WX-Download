@@ -16,14 +16,6 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-
-//        ndk {
-//            abiFilters = 'arm64-v8a', 'armeabi-v7a' // 根据需要选择ABI
-//        }
-//        renderscriptTargetApi = 23 // 设置RenderScript的API级别
-//        renderscriptSupportModeEnabled = true // 启用RenderScript支持模式
-
-//        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -77,9 +69,9 @@ dependencies {
     implementation(libs.collapsing.toolbar.scaffold)
 //    implementation(libs.androidx.ui.graphics.android)
 
-    implementation(project(":WX-Download-Lib"))
+//    implementation(project(":WX-Download-Lib"))
     implementation("io.github.wgllss:Wgllss-ProgressButton:1.0.08")
-//    implementation(project(":WX-ProgressButton-Lib"))
+    implementation("io.github.wgllss:Wgllss-Download:1.0.00")
 
 
     implementation(libs.converter.gson)
@@ -89,7 +81,6 @@ dependencies {
     implementation(libs.xxpermissions)
     implementation(libs.core.ktx)
     implementation(libs.xxpermissions)
-//    implementation(libs.wgllss.wxchart)
 
 //    implementation("androidx.media3:media3-exoplayer:1.2.1")
 //    implementation("androidx.media3:media3-exoplayer-dash:1.2.1")

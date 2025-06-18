@@ -8,6 +8,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import java.io.File
+import java.io.RandomAccessFile
 
 class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBean, private val channel: Channel<WXState>, private val stateHolder: WXStateHolder) {
 
@@ -41,6 +42,7 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
                 isLoadSuccess = initTemp(mis, startPos, endPos, tempFile, downLoadFileBean, channel, stateHolder)
 
                 WLog.i(this, "${mis} 分 ${downLoadFileBean.fileAsyncNumb}个 异步任务 下载文件 ${Thread.currentThread().name}")
+
                 if (!isLoadSuccess) {
                     val fileAsynNum = downLoadFileBean.fileAsyncNumb
                     val isRange = downLoadFileBean.isRange

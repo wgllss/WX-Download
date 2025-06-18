@@ -5,6 +5,7 @@ import com.wx.download.download.WXBaseNetDownload
 import com.wx.download.download.WXDownloadDefault
 import com.wx.download.download.WXDownloadDefault.DEFAULT_MIN_DOWNLOAD_PROGRESS_RANGE_SIZE
 import com.wx.download.download.WXDownloadFileBean
+import com.wx.download.download.WXSafeRandomAccessFile
 import com.wx.download.download.WXState
 import com.wx.download.download.WXStateHolder
 import com.wx.download.utils.HttpUtils
@@ -45,11 +46,14 @@ class WXHttpURLConnectionImpl(private val minDownloadRangeSize: Long) : WXBaseNe
         var tempFile: RandomAccessFile
         if (downLoadFileBean.tempFile.exists()) {
             tempFile = RandomAccessFile(downLoadFileBean.tempFile, "rw")
+            tempFile.seek(0L)
             downLoadFileBean.fileLength = tempFile.readLong() // 8个位置
             downLoadFileBean.isRange = tempFile.readBoolean() // 1个位置
             downLoadFileBean.fileAsyncNumb = tempFile.readInt() //4个位置
+            WLog.e(this, "缓存文件总大小：${downLoadFileBean.fileLength} 是否断点续传${downLoadFileBean.isRange} 分${downLoadFileBean.fileAsyncNumb}片")
+
             tempFile.close()
-            return true
+            if (downLoadFileBean.fileLength > 0) return true
         }
 
         var httpConnection: HttpURLConnection? = null
@@ -85,11 +89,11 @@ class WXHttpURLConnectionImpl(private val minDownloadRangeSize: Long) : WXBaseNe
                     }
 
                     downLoadFileBean.fileLength = fileLength
-
-                    tempFile = RandomAccessFile(downLoadFileBean.tempFile, "rw")
+                    downLoadFileBean.tempFile.takeUnless { it.exists() }?.createNewFile()
+                    tempFile = RandomAccessFile(downLoadFileBean.tempFile.absoluteFile, "rw")
                     tempFile.writeLong(fileLength) //存取文件长度   占8个位置
                     tempFile.writeBoolean(downLoadFileBean.isRange)//存取文件服务器是否支持断点续传 占1个位置
-                    if (fileLength < 1L * minDownloadRangeSize) {
+                    if (fileLength < minDownloadRangeSize) {
                         //如果文件大小小于1M 默认就只分一块下载
                         downLoadFileBean.fileAsyncNumb = 1
                     }
@@ -108,7 +112,7 @@ class WXHttpURLConnectionImpl(private val minDownloadRangeSize: Long) : WXBaseNe
         return false // 失败返回
     }
 
-    override suspend fun downloadChunk(mis: String, asynID: Int, downLoadFileBean: WXDownloadFileBean, file: RandomAccessFile, tempFile: RandomAccessFile, startPosi: Long, endPos: Long, channel: Channel<WXState>, stateHolder: WXStateHolder): Boolean {
+    override suspend fun downloadChunk(mis: String, asynID: Int, downLoadFileBean: WXDownloadFileBean, file: WXSafeRandomAccessFile, tempFile: WXSafeRandomAccessFile, startPosi: Long, endPos: Long, channel: Channel<WXState>, stateHolder: WXStateHolder): Boolean {
         val isComplete = coroutineScope {
             var isOK = false
             var inputStream: InputStream? = null
@@ -131,15 +135,14 @@ class WXHttpURLConnectionImpl(private val minDownloadRangeSize: Long) : WXBaseNe
                     inputStream = con.inputStream // 打开输入流
                     var len = 0
                     val b = ByteArray(1024)
-                    tempFile.seek(13L + 8 * asynID)
                     file.seek(startPos)
 
                     while (isActive && !downLoadFileBean.isAbortDownload && !isOK && (inputStream.read(b).also { len = it }) != -1) {
                         file.write(b, 0, len) // 写入临时数据文件,外性能需要提高
                         count += len.toLong()
                         startPos += len.toLong()
-
-                        tempFile.writeLong(startPos) // 写入断点数据文件
+//                        tempFile.seek(13L + 8 * asynID)
+                        tempFile.writeLong((13L + 8 * asynID), startPos) // 写入断点数据文件位置
                         if ((count - myFileLength) > DEFAULT_MIN_DOWNLOAD_PROGRESS_RANGE_SIZE) {
                             myFileLength = count
                             var tempSize = 0L
@@ -155,10 +158,11 @@ class WXHttpURLConnectionImpl(private val minDownloadRangeSize: Long) : WXBaseNe
                         } // 下载完成
                     }
                     if (isOK) WLog.e(this, "$mis 下载完成")
-                    else WLog.e(this, "$mis 下载暂停")
+                    else WLog.e(this, "$mis 下载暂停 已经下载到位置：$startPos")
                 }
             } catch (e: Exception) {
-                WLog.e(this, "$mis 异常: ${e.message}")
+                e.printStackTrace()
+                WLog.e(this@WXHttpURLConnectionImpl, "$mis 异常: ${e.message}")
             } finally {
                 try {
                     // 关闭连接

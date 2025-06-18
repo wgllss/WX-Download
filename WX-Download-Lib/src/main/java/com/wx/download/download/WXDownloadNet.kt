@@ -12,5 +12,5 @@ interface WXDownloadNet {
 
     fun initTempPosition(exists: Boolean, startPos: LongArray, endPos: LongArray, tempFile: File, tempFileFos: RandomAccessFile, fileAsyncNumb: Int, fileLength: Long)
 
-    suspend fun downloadChunk(mis: String, asynID: Int, downLoadFileBean: WXDownloadFileBean, file: RandomAccessFile, tempFile: RandomAccessFile, startPosi: Long, endPos: Long, channel: Channel<WXState>, stateHolder: WXStateHolder): Boolean
+    suspend fun downloadChunk(mis: String, asynID: Int, downLoadFileBean: WXDownloadFileBean, file: WXSafeRandomAccessFile, tempFile: WXSafeRandomAccessFile, startPosi: Long, endPos: Long, channel: Channel<WXState>, stateHolder: WXStateHolder): Boolean
 }

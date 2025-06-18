@@ -45,7 +45,7 @@ class WXDownloadManager private constructor() {
     }
 
     //初始化下载
-    fun downloadInit(coroutineScope: CoroutineScope, maxTaskNumber: Int = WXDownloadDefault.DEFAULT_MAX_TASK_NUMBER, downloadNet: WXDownloadNet = WXHttpURLConnectionImpl(WXDownloadDefault.DEFAULT_MIN_DOWNLOAD_RANGE_SIZE)) {
+    fun downloadInit(coroutineScope: CoroutineScope, maxTaskNumber: Int = WXDownloadDefault.DEFAULT_MAX_TASK_NUMBER, downloadNet: WXDownloadNet = WXOkHttpImpl(WXDownloadDefault.DEFAULT_MIN_DOWNLOAD_RANGE_SIZE)) {
         this.maxTaskNumber = maxTaskNumber
         this.downloadNet = downloadNet
 
@@ -107,15 +107,22 @@ class WXDownloadManager private constructor() {
     fun initTempFilePercent(coroutineScope: CoroutineScope, whichFile: Int, strDownloadDir: String, fileSaveName: String) {
         coroutineScope.launch(Dispatchers.IO) {
             val saveFile = File(StringBuilder(strDownloadDir).append(File.separator).append(fileSaveName).toString())
-            val tempFile = File(StringBuilder(strDownloadDir).append(File.separator).append(".${fileSaveName}tmp${whichFile}").toString())
+            val tempFile = File(StringBuilder(strDownloadDir).append(File.separator).append(fileSaveName).append("tmp").append(whichFile).toString())
             if (saveFile.exists() && tempFile.exists()) {
-                val localFileSize = saveFile.length() // 本地的文件大小
-                val tempFile = RandomAccessFile(tempFile, "rw")
-                val fileLength = tempFile.readLong()
-                val nPercent = (localFileSize * 100f / fileLength)
-                val stateHolder = WXStateHolder().apply { which = whichFile }
-                channel.send(stateHolder.downloading.apply { progress = nPercent })
-                tempFile.close()
+                try {
+                    val localFileSize = saveFile.length() // 本地的文件大小
+                    val tempFile = RandomAccessFile(tempFile, "rw")
+                    val fileLength = tempFile.readLong()
+                    WLog.e(this@WXDownloadManager, "localFileSize:$localFileSize  fileLength:$fileLength")
+                    if (fileLength > 0) {
+                        val nPercent = (localFileSize * 100f / fileLength)
+                        val stateHolder = WXStateHolder().apply { which = whichFile }
+                        channel.send(stateHolder.downloading.apply { progress = nPercent })
+                    }
+                    tempFile.close()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
                 return@launch
             }
             if (saveFile.exists() && !tempFile.exists()) {

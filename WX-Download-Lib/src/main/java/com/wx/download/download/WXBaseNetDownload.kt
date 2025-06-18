@@ -40,6 +40,7 @@ abstract class WXBaseNetDownload : WXDownloadNet {
             }
         } catch (e: Exception) {
             channel.send(stateHolder.failed)
+            e.printStackTrace()
             WLog.e(this, "${mis}异常：${e.message}")
         } finally {
             try {
@@ -53,15 +54,17 @@ abstract class WXBaseNetDownload : WXDownloadNet {
 
     override fun initTempPosition(exists: Boolean, startPos: LongArray, endPos: LongArray, tempFile: File, tempFileFos: RandomAccessFile, fileAsyncNumb: Int, fileLength: Long) {
         val fileThreadSize = fileLength / fileAsyncNumb // 每个线程需要下载的大小
-        tempFileFos.seek(13)
         for (i in 0..<fileAsyncNumb) {
-            if (!exists) tempFile.createNewFile()
-//            tempFileFos = RandomAccessFile(tempFile, "rw")
-            startPos[i] = if (!exists) fileThreadSize * i else tempFileFos.readLong() // 开始的位置
-            WLog.e(this, "startPos[${i}]:${startPos[i]} ")
-            if (!exists) {
-                tempFileFos.writeLong(startPos[i])
+            startPos[i] = if (!exists) {
+                val start = fileThreadSize * i
+                tempFileFos.seek(13L + 8L * i)
+                tempFileFos.writeLong(start)
+                start
+            } else {
+                tempFileFos.seek(13L + 8L * i)
+                tempFileFos.readLong() // 开始的位置
             }
+            WLog.e(this, "startPos[${i}]:${startPos[i]} ")
 
             if (i == fileAsyncNumb - 1) {
                 endPos[i] = fileLength

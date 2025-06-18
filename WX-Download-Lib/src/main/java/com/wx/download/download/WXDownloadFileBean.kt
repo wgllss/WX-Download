@@ -27,7 +27,8 @@ class WXDownloadFileBean(
     var isAbortDownload = false
 
     val fileTempName: String
-        get() = ".${fileSaveName}tmp${which}"
+        get() = StringBuilder(fileSaveName).append("tmp").append(which).toString()
+//        get() = ".${fileSaveName}tmp${which}"
 
     val saveFile: File
         get() = File(StringBuilder(fileSavePath).append(File.separator).append(fileSaveName).toString())

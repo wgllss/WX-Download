@@ -3,6 +3,7 @@ package com.wx.download.download.net
 import com.wx.download.download.WXBaseNetDownload
 import com.wx.download.download.WXDownloadDefault.DEFAULT_MIN_DOWNLOAD_PROGRESS_RANGE_SIZE
 import com.wx.download.download.WXDownloadFileBean
+import com.wx.download.download.WXSafeRandomAccessFile
 import com.wx.download.download.WXState
 import com.wx.download.download.WXStateHolder
 import com.wx.download.utils.WLog
@@ -20,11 +21,13 @@ class WXOkHttpImpl(private val minDownloadRangeSize: Long) : WXBaseNetDownload()
         var tempFile: RandomAccessFile
         if (downLoadFileBean.tempFile.exists()) {
             tempFile = RandomAccessFile(downLoadFileBean.tempFile, "rw")
+            tempFile.seek(0L)
             downLoadFileBean.fileLength = tempFile.readLong()
             downLoadFileBean.isRange = tempFile.readBoolean()
             downLoadFileBean.fileAsyncNumb = tempFile.readInt()
             tempFile.close()
-            return true
+            if (downLoadFileBean.fileLength > 0)
+                return true
         }
         val request = Request.Builder().url(downLoadFileBean.fileSiteURL).build()
         val response = client.newCall(request).execute()
@@ -50,7 +53,7 @@ class WXOkHttpImpl(private val minDownloadRangeSize: Long) : WXBaseNetDownload()
                     tempFile = RandomAccessFile(downLoadFileBean.tempFile, "rw")
                     tempFile.writeLong(fileLength) //存取文件长度
                     tempFile.writeBoolean(downLoadFileBean.isRange)//存取文件服务器是否支持断点续传
-                    if (fileLength < 1L * minDownloadRangeSize) {
+                    if (fileLength < minDownloadRangeSize) {
                         //如果文件大小小于1M 默认就只分一块下载
                         downLoadFileBean.fileAsyncNumb = 1
                     }
@@ -69,7 +72,7 @@ class WXOkHttpImpl(private val minDownloadRangeSize: Long) : WXBaseNetDownload()
     }
 
 
-    override suspend fun downloadChunk(mis: String, asynID: Int, downLoadFileBean: WXDownloadFileBean, file: RandomAccessFile, tempFile: RandomAccessFile, startPosi: Long, endPos: Long, channel: Channel<WXState>, stateHolder: WXStateHolder): Boolean {
+    override suspend fun downloadChunk(mis: String, asynID: Int, downLoadFileBean: WXDownloadFileBean, file: WXSafeRandomAccessFile, tempFile: WXSafeRandomAccessFile, startPosi: Long, endPos: Long, channel: Channel<WXState>, stateHolder: WXStateHolder): Boolean {
         val isComplete = coroutineScope {
             var isOK = false
             val request = Request.Builder().url(downLoadFileBean.fileSiteURL)
@@ -83,7 +86,6 @@ class WXOkHttpImpl(private val minDownloadRangeSize: Long) : WXBaseNetDownload()
                     file.seek(startPos) // 转到文件指针位置
                     response.body?.byteStream()?.use { input ->
                         file.seek(startPos)
-                        tempFile.seek(13L + 8 * asynID)
 
                         var count = 0L
                         var len = 0
@@ -93,7 +95,8 @@ class WXOkHttpImpl(private val minDownloadRangeSize: Long) : WXBaseNetDownload()
                             file.write(b, 0, len) // 写入临时数据文件,外性能需要提高
                             count += len.toLong()
                             startPos += len.toLong()
-                            tempFile.writeLong(startPos) // 写入断点数据文件
+//                            tempFile.seek(13L + 8 * asynID)
+                            tempFile.writeLong((13L + 8 * asynID), startPos) // 写入断点数据文件位置
                             if ((count - myFileLength) > DEFAULT_MIN_DOWNLOAD_PROGRESS_RANGE_SIZE) {
                                 myFileLength = count
                                 var tempSize = 0L
@@ -108,9 +111,12 @@ class WXOkHttpImpl(private val minDownloadRangeSize: Long) : WXBaseNetDownload()
                                 isOK = true
                             } // 下载完成
                         }
+                        if (isOK) WLog.e(this, "$mis 下载完成")
+                        else WLog.e(this, "$mis 下载暂停 已经下载到位置：$startPos")
                     }
                 } catch (e: Exception) {
-                    WLog.e(this, "$mis 异常: ${e.message}")
+                    e.printStackTrace()
+                    WLog.e(this@WXOkHttpImpl, "$mis 异常: ${e.message}")
                 } finally {
                     file.close()
                     tempFile.close()

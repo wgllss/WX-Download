@@ -45,7 +45,7 @@ class WXDownloadManager private constructor() {
     }
 
     //初始化下载
-    fun downloadInit(coroutineScope: CoroutineScope, maxTaskNumber: Int = WXDownloadDefault.DEFAULT_MAX_TASK_NUMBER, downloadNet: WXDownloadNet = WXOkHttpImpl(WXDownloadDefault.DEFAULT_MIN_DOWNLOAD_RANGE_SIZE)) {
+    fun downloadInit(coroutineScope: CoroutineScope, maxTaskNumber: Int = WXDownloadDefault.DEFAULT_MAX_TASK_NUMBER, downloadNet: WXDownloadNet = WXHttpURLConnectionImpl(WXDownloadDefault.DEFAULT_MIN_DOWNLOAD_RANGE_SIZE)) {
         this.maxTaskNumber = maxTaskNumber
         this.downloadNet = downloadNet
 

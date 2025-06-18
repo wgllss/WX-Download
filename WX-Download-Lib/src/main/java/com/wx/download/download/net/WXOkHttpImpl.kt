@@ -25,6 +25,9 @@ class WXOkHttpImpl(private val minDownloadRangeSize: Long) : WXBaseNetDownload()
             downLoadFileBean.fileLength = tempFile.readLong()
             downLoadFileBean.isRange = tempFile.readBoolean()
             downLoadFileBean.fileAsyncNumb = tempFile.readInt()
+
+            WLog.e(this, "缓存文件总大小：${downLoadFileBean.fileLength} 是否断点续传${downLoadFileBean.isRange} 分${downLoadFileBean.fileAsyncNumb}片")
+
             tempFile.close()
             if (downLoadFileBean.fileLength > 0)
                 return true

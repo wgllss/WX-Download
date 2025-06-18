@@ -118,7 +118,6 @@ class WXOkHttpImpl(private val minDownloadRangeSize: Long) : WXBaseNetDownload()
                         else WLog.e(this, "$mis 下载暂停 已经下载到位置：$startPos")
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
                     WLog.e(this@WXOkHttpImpl, "$mis 异常: ${e.message}")
                 } finally {
                     file.close()

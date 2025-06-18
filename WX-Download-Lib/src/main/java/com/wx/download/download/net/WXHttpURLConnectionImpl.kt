@@ -161,7 +161,6 @@ class WXHttpURLConnectionImpl(private val minDownloadRangeSize: Long) : WXBaseNe
                     else WLog.e(this, "$mis 下载暂停 已经下载到位置：$startPos")
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
                 WLog.e(this@WXHttpURLConnectionImpl, "$mis 异常: ${e.message}")
             } finally {
                 try {

@@ -17,13 +17,13 @@ class WXOkHttpImpl(private val minDownloadRangeSize: Long) : WXBaseNetDownload()
     private val client = OkHttpClient()
 
     override suspend fun isConnect(mis: String, downLoadFileBean: WXDownloadFileBean, channel: Channel<WXState>, stateHolder: WXStateHolder): Boolean {
-        var lengthFile: RandomAccessFile
-        if (downLoadFileBean.lengthFile.exists()) {
-            lengthFile = RandomAccessFile(downLoadFileBean.lengthFile, "rw")
-            downLoadFileBean.fileLength = lengthFile.readLong()
-            downLoadFileBean.isRange = lengthFile.readBoolean()
-            downLoadFileBean.fileAsyncNumb = lengthFile.readInt()
-            lengthFile.close()
+        var tempFile: RandomAccessFile
+        if (downLoadFileBean.tempFile.exists()) {
+            tempFile = RandomAccessFile(downLoadFileBean.tempFile, "rw")
+            downLoadFileBean.fileLength = tempFile.readLong()
+            downLoadFileBean.isRange = tempFile.readBoolean()
+            downLoadFileBean.fileAsyncNumb = tempFile.readInt()
+            tempFile.close()
             return true
         }
         val request = Request.Builder().url(downLoadFileBean.fileSiteURL).build()
@@ -47,15 +47,15 @@ class WXOkHttpImpl(private val minDownloadRangeSize: Long) : WXBaseNetDownload()
                     }
                     downLoadFileBean.fileLength = fileLength
 
-                    lengthFile = RandomAccessFile(downLoadFileBean.lengthFile, "rw")
-                    lengthFile.writeLong(fileLength) //存取文件长度
-                    lengthFile.writeBoolean(downLoadFileBean.isRange)//存取文件服务器是否支持断点续传
+                    tempFile = RandomAccessFile(downLoadFileBean.tempFile, "rw")
+                    tempFile.writeLong(fileLength) //存取文件长度
+                    tempFile.writeBoolean(downLoadFileBean.isRange)//存取文件服务器是否支持断点续传
                     if (fileLength < 1L * minDownloadRangeSize) {
                         //如果文件大小小于1M 默认就只分一块下载
                         downLoadFileBean.fileAsyncNumb = 1
                     }
-                    lengthFile.writeInt(downLoadFileBean.fileAsyncNumb)
-                    lengthFile.close()
+                    tempFile.writeInt(downLoadFileBean.fileAsyncNumb)
+                    tempFile.close()
                     return true // 失败成功
                 }
             } catch (e: Exception) {
@@ -83,7 +83,7 @@ class WXOkHttpImpl(private val minDownloadRangeSize: Long) : WXBaseNetDownload()
                     file.seek(startPos) // 转到文件指针位置
                     response.body?.byteStream()?.use { input ->
                         file.seek(startPos)
-                        tempFile.seek(0L)
+                        tempFile.seek(13L + 8 * asynID)
 
                         var count = 0L
                         var len = 0

@@ -68,7 +68,8 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
                         msg = "成功"
                         downLoadFileBean.isDownSuccess = true // 下载成功
                         channel.send(stateHolder.succeed)
-                        tempFile.all { it.delete() }// 临时文件删除
+                        tempFile.delete() // 临时文件删除
+//                        downLoadFileBean.lengthFile.delete()
                     } else {
                         if (downLoadFileBean.isAbortDownload) channel.send(stateHolder.pause)
                         else channel.send(stateHolder.failed)
@@ -81,7 +82,7 @@ class WXDownloadCoroutineManager(private val downLoadFileBean: WXDownloadFileBea
                     channel.send(stateHolder.succeed)
                     val end = System.currentTimeMillis()
                     WLog.i(this, "成功下载'${downLoadFileBean.fileSaveName}'花时：${(end - start).toDouble() / 1000}秒")
-                    tempFile.all { it.delete() }// 临时文件删除
+                    tempFile.delete() // 临时文件删除
                 }
             }
         }

@@ -19,7 +19,7 @@ class WXRangeDownload(
     suspend fun runDownload(downloadNet: WXDownloadNet) {
         try {
             file = RandomAccessFile(downLoadFileBean.saveFile, "rw")  // 存放的文件
-            tempFile = RandomAccessFile(downLoadFileBean.tempFile[asynID], "rw")  //指针文件
+            tempFile = RandomAccessFile(downLoadFileBean.tempFile, "rw")  //指针文件
         } catch (e: Exception) {
             e.printStackTrace()
         }

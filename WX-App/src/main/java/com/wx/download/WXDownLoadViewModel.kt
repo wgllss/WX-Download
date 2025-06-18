@@ -46,7 +46,7 @@ class WXDownLoadViewModel : ViewModel() {
         val url = downloadDatas[which]
         var fileSaveName = url.substring(url.lastIndexOf("?") + 1, url.length)
         if (which == 0) fileSaveName = "blue.apk"
-        val fileAsyncNumb = 2
+        val fileAsyncNumb = 3
         downloadManager.download(viewModelScope, which, url, strDownloadDir, fileSaveName, fileAsyncNumb, true)
     }
 

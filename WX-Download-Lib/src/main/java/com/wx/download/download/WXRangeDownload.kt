@@ -24,9 +24,6 @@ class WXRangeDownload(
             e.printStackTrace()
         }
 
-        tempFile.seek(0)
-        WLog.e(this, "$mis runDownload 文件总长度：${tempFile.readLong()}")
-
         WLog.i(this, "$mis 开始下载! ${Thread.currentThread().name}")
         curNum = 0
         while (curNum < reTryNum && !isOK && !downLoadFileBean.isAbortDownload) {

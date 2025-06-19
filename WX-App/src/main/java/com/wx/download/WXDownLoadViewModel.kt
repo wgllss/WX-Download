@@ -25,7 +25,7 @@ class WXDownLoadViewModel : ViewModel() {
     val datas: LiveData<MutableList<ProgressModel>> = _datas
 
     private val downloadDatas = mutableListOf(
-        "https://gitee.com/wgllss888/WXDynamicPlugin/raw/master/WX-Resource/skins/blue.apk",//该地址 contentLengthLong 方案是获取不到的
+//        "https://gitee.com/wgllss888/WXDynamicPlugin/raw/master/WX-Resource/skins/blue.apk",//该地址 contentLengthLong 方案是获取不到的
         "https://imtt.dd.qq.com/16891/apk/96881CC7639E84F35E86421691CBBA5D.apk?fsname=com.sina.weibo_11.1.3_4842.apk",
         "https://imtt.dd.qq.com/sjy.00022/sjy.00004/16891/apk/8C6FDC631C3D853BF29321F86EE739FF.apk?fsname=com.taobao.idlefish_7.21.31.apk",
         "https://imtt.dd.qq.com/sjy.00022/sjy.00004/16891/apk/822A20774AEE3225DD7BCAA20DB56C7D.apk?fsname=com.taobao.taobao_10.49.10.apk",
@@ -49,25 +49,33 @@ class WXDownLoadViewModel : ViewModel() {
 
     fun add() {
         viewModelScope.launch {
-            val list = mutableListOf(ProgressModel("下载按钮1", strokeColor = Color.Red, mBackgroundSecondColor = Color.Red).apply {
-                maxProgress = 100f
-                statusFinishText = "点击安装1"
-            }, ProgressModel("下载按钮2", strokeColor = Color.Red, mBackgroundSecondColor = Color.Red).apply {
-                maxProgress = 100f
-                statusFinishText = "点击安装2"
-            }, ProgressModel("下载按钮3", strokeColor = Color.Red, mBackgroundSecondColor = Color.Red).apply {
-                maxProgress = 100f
-                statusFinishText = "点击安装3"
-            }, ProgressModel("下载按钮4", strokeColor = Color.Red, mBackgroundSecondColor = Color.Red).apply {
-                maxProgress = 100f
-                statusFinishText = "点击安装4"
-            }, ProgressModel("下载按钮5", strokeColor = Color.Red, mBackgroundSecondColor = Color.Red).apply {
-                maxProgress = 100f
-                statusFinishText = "点击安装5"
-            }, ProgressModel("下载按钮6", strokeColor = Color.Red, mBackgroundSecondColor = Color.Red).apply {
-                maxProgress = 100f
-                statusFinishText = "点击安装6"
-            })
+            val list = mutableListOf(
+                ProgressModel("下载按钮1", strokeColor = Color.Red, mBackgroundSecondColor = Color.Red).apply {
+                    maxProgress = 100f
+                    statusFinishText = "点击安装1"
+                },
+                ProgressModel("下载按钮2", strokeColor = Color.Red, mBackgroundSecondColor = Color.Red).apply {
+                    maxProgress = 100f
+                    statusFinishText = "点击安装2"
+                },
+                ProgressModel("下载按钮3", strokeColor = Color.Red, mBackgroundSecondColor = Color.Red).apply {
+                    maxProgress = 100f
+                    statusFinishText = "点击安装3"
+                },
+                ProgressModel("下载按钮4", strokeColor = Color.Red, mBackgroundSecondColor = Color.Red).apply {
+                    maxProgress = 100f
+                    statusFinishText = "点击安装4"
+                },
+                ProgressModel("下载按钮5", strokeColor = Color.Red, mBackgroundSecondColor = Color.Red).apply {
+                    maxProgress = 100f
+                    statusFinishText = "点击安装5"
+                },
+//                ProgressModel("下载按钮6", strokeColor = Color.Red, mBackgroundSecondColor = Color.Red).apply {
+//                maxProgress = 100f
+//                statusFinishText = "点击安装6"
+//            }
+
+            )
             _datas.value = list
         }
 
@@ -99,7 +107,7 @@ class WXDownLoadViewModel : ViewModel() {
         /** 初始化上次没有下载完的文件下载进度 **/
         downloadDatas.forEachIndexed { index, url ->
             var fileSaveName = url.substring(url.lastIndexOf("?") + 1, url.length)
-            if (index == 0) fileSaveName = "blue.apk"
+//            if (index == 0) fileSaveName = "blue.apk"
             // 注意：  要与点击下载传入保存的文件名fileSaveName ，保存的文件路径strDownloadDir ，which 全部要一致
             downloadManager.initTempFilePercent(viewModelScope, index, strDownloadDir, fileSaveName)
         }

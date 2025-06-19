@@ -19,7 +19,7 @@
 * **11、支持读取不到文件大小contentLengthLong时候，采用流的方式读取**
 * **12、支持扩展UI方使用原生和Compose**
 
-![示例截图](https://raw.githubusercontent.com/wgllss/WX-Download/master/pic/ezgif-64c1a6ba2e8564.gif)
+![示例截图](https://raw.githubusercontent.com/wgllss/WX-Download/master/pic/ezgif-8eaac153aa4e9a.gif)
 
 #### 使用方法：
 1、repositories中添加如下maven

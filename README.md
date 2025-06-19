@@ -18,6 +18,8 @@
 * **10、支持控制最小更新下载进度的下载大小值**
 * **11、支持读取不到文件大小contentLengthLong时候，采用流的方式读取**
 * **12、支持扩展UI方使用原生和Compose**
+* **13、支持在viewModelScope和lifecycleScope作用域下开始下载和生命周期相关联**
+* **14、支持在Service下自定义协程作用域下开始下载和Service生命周期保持一致**
 
 ![示例截图](https://raw.githubusercontent.com/wgllss/WX-Download/master/pic/ezgif-8eaac153aa4e9a.gif)
 

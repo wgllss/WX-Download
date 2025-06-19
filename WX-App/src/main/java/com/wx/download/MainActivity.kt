@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.hjq.permissions.Permission
 import com.hjq.permissions.XXPermissions
@@ -69,6 +70,8 @@ class MainActivity : ComponentActivity() {
         }
         viewModel.add()
         checkPermission()
+
+        lifecycleScope
     }
 
     private fun checkPermission(): Boolean {

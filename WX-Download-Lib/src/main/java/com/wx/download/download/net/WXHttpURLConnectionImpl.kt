@@ -66,9 +66,9 @@ class WXHttpURLConnectionImpl(private val minDownloadRangeSize: Long) : WXBaseNe
             httpConnection?.let {
                 val responseCode = httpConnection.responseCode
                 if (responseCode <= 400) {
-                    val acceptRanges = it.getHeaderField("Accept-Ranges")
-                    downLoadFileBean.isRange = ("bytes" == acceptRanges)
-                    WLog.i(this, "$mis-支持断点续传:${downLoadFileBean.isRange}")
+//                    val acceptRanges = it.getHeaderField("Accept-Ranges")
+//                    downLoadFileBean.isRange = ("bytes" == acceptRanges)
+//                    WLog.i(this, "$mis-支持断点续传:${downLoadFileBean.isRange}")
                     var fileLength = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                         httpConnection.contentLengthLong // 设置下载长度
                     } else {
@@ -93,8 +93,8 @@ class WXHttpURLConnectionImpl(private val minDownloadRangeSize: Long) : WXBaseNe
                     tempFile = RandomAccessFile(downLoadFileBean.tempFile.absoluteFile, "rw")
                     tempFile.writeLong(fileLength) //存取文件长度   占8个位置
                     tempFile.writeBoolean(downLoadFileBean.isRange)//存取文件服务器是否支持断点续传 占1个位置
-                    if (fileLength < minDownloadRangeSize) {
-                        //如果文件大小小于1M 默认就只分一块下载
+                    if (fileLength < minDownloadRangeSize || !downLoadFileBean.isRange) {
+                        //如果文件大小小于1M 默认就只分一块下载,或者不支持断点续传
                         downLoadFileBean.fileAsyncNumb = 1
                     }
                     tempFile.writeInt(downLoadFileBean.fileAsyncNumb) //占4个位置

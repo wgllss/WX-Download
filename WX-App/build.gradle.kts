@@ -71,7 +71,7 @@ dependencies {
 
 //    implementation(project(":WX-Download-Lib"))
     implementation("io.github.wgllss:Wgllss-ProgressButton:1.0.08")
-    implementation("io.github.wgllss:Wgllss-Download:1.0.01")
+    implementation("io.github.wgllss:Wgllss-Download:1.0.03")
 
 
     implementation(libs.converter.gson)

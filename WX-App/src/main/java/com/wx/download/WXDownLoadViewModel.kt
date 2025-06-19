@@ -7,9 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wx.download.download.WXDownloadManager
-import com.wx.download.download.WXDownloadFileTask
 import com.wx.download.download.WXState
-import com.wx.download.utils.WLog
 import com.wx.progress.WX_PROGRESS_BUTTON_DOWNLOADING
 import com.wx.progress.WX_PROGRESS_BUTTON_DOWNLOAD_COMPLETE
 import com.wx.progress.WX_PROGRESS_BUTTON_DOWNLOAD_PAUSE
@@ -17,7 +15,6 @@ import com.wx.progress.dynamic.ProgressModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import java.io.File
 
 class WXDownLoadViewModel : ViewModel() {
 
@@ -76,7 +73,7 @@ class WXDownLoadViewModel : ViewModel() {
 
 
         /** 初始化 最大并行同时下载文件个数 **/
-        downloadManager.downloadInit(viewModelScope, 3)
+        downloadManager.downloadInit(viewModelScope, 3, true)
 
         /** 监听文件下载状态 及下载进度 **/
         downloadManager.downloadStatusFlow().onEach {

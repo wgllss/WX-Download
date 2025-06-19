@@ -29,15 +29,14 @@ class WXOkHttpImpl(private val minDownloadRangeSize: Long) : WXBaseNetDownload()
             WLog.e(this, "缓存文件总大小：${downLoadFileBean.fileLength} 是否断点续传${downLoadFileBean.isRange} 分${downLoadFileBean.fileAsyncNumb}片")
 
             tempFile.close()
-            if (downLoadFileBean.fileLength > 0)
-                return true
+            if (downLoadFileBean.fileLength > 0) return true
         }
         val request = Request.Builder().url(downLoadFileBean.fileSiteURL).build()
         val response = client.newCall(request).execute()
         response.use {
             try {
                 if (it.isSuccessful) {
-                    downLoadFileBean.isRange = (it.code == 206 || it.header("Content-Range")?.isNotEmpty() == true || it.header("Accept-Ranges") == "bytes")
+//                    downLoadFileBean.isRange = (it.code == 206 || it.header("Content-Range")?.isNotEmpty() == true || it.header("Accept-Ranges") == "bytes")
                     var fileLength = it.body?.contentLength() ?: -1L
                     if (fileLength == -1L) {
                         val inputStream = it.body?.byteStream()!!
@@ -56,7 +55,7 @@ class WXOkHttpImpl(private val minDownloadRangeSize: Long) : WXBaseNetDownload()
                     tempFile = RandomAccessFile(downLoadFileBean.tempFile, "rw")
                     tempFile.writeLong(fileLength) //存取文件长度
                     tempFile.writeBoolean(downLoadFileBean.isRange)//存取文件服务器是否支持断点续传
-                    if (fileLength < minDownloadRangeSize) {
+                    if (fileLength < minDownloadRangeSize || !downLoadFileBean.isRange) {
                         //如果文件大小小于1M 默认就只分一块下载
                         downLoadFileBean.fileAsyncNumb = 1
                     }

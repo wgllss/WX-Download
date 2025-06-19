@@ -1,5 +1,6 @@
 package com.wx.download.download
 
+import com.wx.download.BuildConfig
 import com.wx.download.download.net.WXHttpURLConnectionImpl
 import com.wx.download.download.net.WXOkHttpImpl
 import com.wx.download.utils.WLog
@@ -45,10 +46,10 @@ class WXDownloadManager private constructor() {
     }
 
     //初始化下载
-    fun downloadInit(coroutineScope: CoroutineScope, maxTaskNumber: Int = WXDownloadDefault.DEFAULT_MAX_TASK_NUMBER, downloadNet: WXDownloadNet = WXHttpURLConnectionImpl(WXDownloadDefault.DEFAULT_MIN_DOWNLOAD_RANGE_SIZE)) {
+    fun downloadInit(coroutineScope: CoroutineScope, maxTaskNumber: Int = WXDownloadDefault.DEFAULT_MAX_TASK_NUMBER, isDeBug: Boolean = BuildConfig.DEBUG, downloadNet: WXDownloadNet = WXOkHttpImpl(WXDownloadDefault.DEFAULT_MIN_DOWNLOAD_RANGE_SIZE)) {
         this.maxTaskNumber = maxTaskNumber
         this.downloadNet = downloadNet
-
+        WLog.isDeBug = isDeBug
         coroutineScope.launch {
             WLog.i(this@WXDownloadManager, "downloadInit ${Thread.currentThread().name}")
             channel.consumeEach { s ->

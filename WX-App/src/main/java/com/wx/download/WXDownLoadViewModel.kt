@@ -25,7 +25,7 @@ class WXDownLoadViewModel : ViewModel() {
     val datas: LiveData<MutableList<ProgressModel>> = _datas
 
     private val downloadDatas = mutableListOf(
-//        "https://gitee.com/wgllss888/WXDynamicPlugin/raw/master/WX-Resource/skins/blue.apk",//该地址 contentLengthLong 方案是获取不到的
+//        "https://gitee.com/wgllss888/WXDynamicPlugin/raw/master/WX-Resource/skins/blue.apk",//该地址 contentLengthLong 方案是获取不到的,本框架已经兼容可以下载
         "https://imtt.dd.qq.com/16891/apk/96881CC7639E84F35E86421691CBBA5D.apk?fsname=com.sina.weibo_11.1.3_4842.apk",
         "https://imtt.dd.qq.com/sjy.00022/sjy.00004/16891/apk/8C6FDC631C3D853BF29321F86EE739FF.apk?fsname=com.taobao.idlefish_7.21.31.apk",
         "https://imtt.dd.qq.com/sjy.00022/sjy.00004/16891/apk/822A20774AEE3225DD7BCAA20DB56C7D.apk?fsname=com.taobao.taobao_10.49.10.apk",

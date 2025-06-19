@@ -3,8 +3,8 @@
 #### 介绍
 基于 Kotlin 协程 compose Flow Channel 多文件，多任务同时下载，支持断点续传,支持队列等待下载，支持暂停
 #### 相关文章介绍
-[大型异步下载器：基于kotlin+Compose+协程+Flow+Channel实现多文件异步同时分片断点续传下载](https://juejin.cn/post/7514590876863135795)
-[大型异步下载器(二)：基于kotlin+Compose+协程+Flow+Channel+ OKhttp 实现多文件异步同时分片断点续传下载](https://juejin.cn/post/7517120006044663819)
+##### [大型异步下载器：基于kotlin+Compose+协程+Flow+Channel实现多文件异步同时分片断点续传下载](https://juejin.cn/post/7514590876863135795)
+##### [大型异步下载器(二)：基于kotlin+Compose+协程+Flow+Channel+ OKhttp 实现多文件异步同时分片断点续传下载](https://juejin.cn/post/7517120006044663819)
 #### 支持特性:
 * **1、支持断点续传**
 * **2、支持暂停**
@@ -22,8 +22,8 @@
 ![示例截图](https://raw.githubusercontent.com/wgllss/WX-DownLoad/master/pic/ezgif-64c1a6ba2e8564)
 
 #### 使用方法：
-```
 1、repositories中添加如下maven
+```
     repositories {
         maven { url 'https://repo1.maven.org/maven2/' }
         maven { url 'https://s01.oss.sonatype.org/content/repositories/releases/' }
